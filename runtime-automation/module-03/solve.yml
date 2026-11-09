@@ -1,0 +1,11 @@
+---
+- name: Module 3 Solve
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Install example final rulebook (all tracks)
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../lab-materials/rulebooks/alert-response.final.example.yml"
+        dest: "{{ lookup('env', 'HOME') }}/eda-lab/rulebooks/alert-response.yml"
+        mode: "0644"

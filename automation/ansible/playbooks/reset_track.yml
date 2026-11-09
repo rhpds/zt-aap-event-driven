@@ -1,0 +1,44 @@
+---
+- name: Reset a single Floci track to bad state
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    track: "s3"
+    floci_endpoint: "{{ lookup('env', 'FLOCI_ENDPOINT') | default('http://127.0.0.1:4566', true) }}"
+  tasks:
+    - name: Reset S3 track
+      when: track == "s3"
+      block:
+        - name: Recreate bucket without BPA enforcement emphasis
+          amazon.aws.s3_bucket:
+            name: eda-lab-public
+            state: present
+            access_key: test
+            secret_key: test
+            region: us-east-1
+            endpoint_url: "{{ floci_endpoint }}"
+          failed_when: false
+
+    - name: Reset SG track
+      when: track == "sg"
+      block:
+        - name: Re-open security group
+          amazon.aws.ec2_security_group:
+            name: eda-lab-open
+            description: "Intentionally open SG for EDA lab"
+            region: us-east-1
+            access_key: test
+            secret_key: test
+            endpoint_url: "{{ floci_endpoint }}"
+            rules:
+              - proto: tcp
+                ports:
+                  - 22
+                cidr_ip: "0.0.0.0/0"
+          failed_when: false
+
+    - name: Reset EC2 track
+      when: track == "ec2"
+      ansible.builtin.debug:
+        msg: "Start/recreate instance tagged Name=eda-lab-runaway in Floci (emulator-dependent)."

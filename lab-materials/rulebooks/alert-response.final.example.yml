@@ -1,0 +1,39 @@
+---
+# Example end-state rulebook (reference / solve). Learners evolve their own copy.
+# Source plugin name may differ once Event Streams credentials are attached in AAP UI.
+- name: Alert response
+  hosts: all
+  sources:
+    - ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5000
+  rules:
+    - name: Prod critical S3 exposure
+      condition: >-
+        event.payload.alertname == "S3PublicExposure" and
+        event.payload.env == "prod" and
+        event.payload.severity == "critical"
+      action:
+        run_workflow_template:
+          name: "WF - S3 remediate verify"
+          organization: Default
+
+    - name: Prod critical open SG
+      condition: >-
+        event.payload.alertname == "OpenSecurityGroup" and
+        event.payload.env == "prod" and
+        event.payload.severity == "critical"
+      action:
+        run_workflow_template:
+          name: "WF - SG remediate verify"
+          organization: Default
+
+    - name: Prod critical runaway instance
+      condition: >-
+        event.payload.alertname == "RunawayInstance" and
+        event.payload.env == "prod" and
+        event.payload.severity == "critical"
+      action:
+        run_workflow_template:
+          name: "WF - EC2 remediate verify"
+          organization: Default

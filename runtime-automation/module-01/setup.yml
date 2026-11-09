@@ -1,0 +1,14 @@
+---
+- name: Module 1 Setup
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Ensure student eda-lab directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ lookup('env', 'HOME') }}/eda-lab/rulebooks"
+        - "{{ lookup('env', 'HOME') }}/eda-lab/bin"

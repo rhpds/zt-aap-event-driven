@@ -1,0 +1,128 @@
+= Module 4: Verified outcome on your Floci track
+:sectnums:
+:module: 04
+
+== Objectives
+
+* Wire remediate → verify for your chosen Floci track
+* Confirm the cloud resource is fixed in Floci
+* Explain skip versus remediate using Rule Audit
+
+Time: ~35 minutes
+
+== Verified outcome vs fire-and-forget
+
+Starting a Job Template is not enough. Production automation should *check* that the
+desired state exists. In this module you close the loop against Floci at `{floci-endpoint}`.
+
+== Wire verify into the path
+
+Use the lab-preferred pattern (pick one — bootstrap docs state which is enabled):
+
+* *Workflow Template* per track: Remediate → Verify (recommended), referenced from the rulebook action, *or*
+* Second rule / sequential action that runs the Verify Job Template after remediate
+
+Update `~/eda-lab/rulebooks/alert-response.yml` so your track's successful match runs the
+*verify* path, not remediate alone. Reload the activation.
+
+Job Template names:
+
+[cols="1,2,2",options="header"]
+|===
+| Track | Remediate | Verify
+
+| A — S3
+| `Remediate - S3 BPA`
+| `Verify - S3 BPA`
+
+| B — SG
+| `Remediate - SG Quarantine`
+| `Verify - SG Quarantine`
+
+| C — Instance
+| `Remediate - Stop Instance`
+| `Verify - Stop Instance`
+|===
+
+== Inspect Floci before (optional)
+
+[source,bash]
+----
+export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_DEFAULT_REGION=us-east-1
+aws --endpoint-url="{floci-endpoint}" s3api get-public-access-block --bucket eda-lab-public || true
+aws --endpoint-url="{floci-endpoint}" ec2 describe-security-groups --group-names eda-lab-open || true
+aws --endpoint-url="{floci-endpoint}" ec2 describe-instances --filters Name=tag:Name,Values=eda-lab-runaway || true
+----
+
+== Track procedures: remediate and verify
+
+Reset your track's resource to the bad state if a prior module already fixed it:
+
+[source,bash]
+----
+~/eda-lab/bin/reset-track.sh "$(cat ~/eda-lab/track)"
+----
+
+=== Track A — S3
+
+[source,bash]
+----
+~/eda-lab/bin/inject-alert.sh --track s3 --env prod --severity critical \
+  --url "$EVENT_STREAM_URL" --token "$EVENT_STREAM_TOKEN"
+aws --endpoint-url="{floci-endpoint}" s3api get-public-access-block --bucket eda-lab-public
+----
+
+Expect Block Public Access enabled and Verify JT successful.
+
+=== Track B — Security group
+
+[source,bash]
+----
+~/eda-lab/bin/inject-alert.sh --track sg --env prod --severity critical \
+  --url "$EVENT_STREAM_URL" --token "$EVENT_STREAM_TOKEN"
+aws --endpoint-url="{floci-endpoint}" ec2 describe-security-groups --group-names eda-lab-open
+----
+
+Expect wide `0.0.0.0/0` ingress removed or quarantined; Verify JT successful.
+
+=== Track C — Runaway instance
+
+[source,bash]
+----
+~/eda-lab/bin/inject-alert.sh --track ec2 --env prod --severity critical \
+  --url "$EVENT_STREAM_URL" --token "$EVENT_STREAM_TOKEN"
+aws --endpoint-url="{floci-endpoint}" ec2 describe-instances \
+  --filters Name=tag:Name,Values=eda-lab-runaway \
+  --query 'Reservations[].Instances[].{State:State.Name,Tags:Tags}'
+----
+
+Expect instance stopped (or stopping) with quarantine tags; Verify JT successful.
+
+== Rule Audit recap
+
+Explain to yourself (or a peer):
+
+. One Module 3 *skip* event
+. This module's *remediate + verify* success
+
+Optional stretch:: force a verify failure and run `Escalate - Notify` (not required for Validate).
+
+== Validate
+
+Click *Validate*. Checks for your track:
+
+* Floci resource matches the expected good state
+* Verify Job Template succeeded recently
+* Track marker still set
+
+== Key takeaways
+
+* Closed-loop automation ends in a verified state
+* Floci teaches AWS-shaped APIs without a live account
+* One EDA control path serves multiple cloud use cases via track-specific actions
+* Rule Audit defends why the platform acted — or did not
+
+== Lab complete
+
+You built a beginner-to-production EDA path on AAP 2.6: activation, Event Streams,
+guardrails, and verified cloud remediation. Nice work.

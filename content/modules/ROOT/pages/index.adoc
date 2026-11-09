@@ -1,0 +1,78 @@
+= {lab-title}
+:sectnums:
+
+== Welcome
+
+In this ~2 hour Zero-Touch lab you will learn Event-Driven Ansible (EDA) on
+*Ansible Automation Platform 2.6* by building *one rulebook* and hardening it
+until it remediates a cloud misconfiguration and *verifies* the result.
+
+You will:
+
+. Create a rulebook (source → condition → action) and run it as an activation
+. Secure intake with *Event Streams*
+. Add environment and severity *guardrails*
+. Remediate and verify a Floci (AWS emulator) resource for your chosen track
+
+Success is a *verified* cloud outcome and a clear *Rule Audit* trail — not merely
+that a job started.
+
+== Choose your track
+
+Pick *one* track at the start of Module 1 and keep it for the whole lab.
+Instructions for all three tracks appear in every module — follow only yours.
+
+[cols="1,2,3",options="header"]
+|===
+| Track | Alert | Floci outcome
+
+| *A — S3*
+| `S3PublicExposure`
+| Enable Block Public Access; verify BPA
+
+| *B — Security group*
+| `OpenSecurityGroup`
+| Remove wide ingress / quarantine; verify rules
+
+| *C — Runaway instance*
+| `RunawayInstance`
+| Stop instance + quarantine tags; verify state
+|===
+
+TIP: If you are unsure, choose *Track A — S3*. It is the simplest Floci path.
+
+== Lab environment
+
+[cols="1,2",options="header"]
+|===
+| Component | Purpose
+
+| Ansible Automation Platform 2.6
+| Controller + Event-Driven Ansible (activations, Event Streams, Job Templates)
+
+| Floci host
+| AWS emulator on `{floci-endpoint}` — all three misconfigurations are pre-seeded
+
+| Terminal
+| Alert injector scripts and rulebook files under `~/eda-lab/`
+|===
+
+Pre-built Job Templates (do not rewrite the playbooks — wire them from your rulebook):
+
+* `Remediate - S3 BPA` / `Verify - S3 BPA`
+* `Remediate - SG Quarantine` / `Verify - SG Quarantine`
+* `Remediate - Stop Instance` / `Verify - Stop Instance`
+* `Escalate - Notify` (stretch)
+
+== How Zero-Touch checks work
+
+Each module has *Validate*. Checks use your track marker from Module 1
+(`~/eda-lab/track` containing `s3`, `sg`, or `ec2`).
+
+== Before you start
+
+. Open the *AAP Controller* and *Event-Driven Ansible* tabs
+. Confirm you can sign in
+. Open the *terminal* tab for injector commands
+
+When ready, continue to xref:module-01-pick-track.adoc[Module 1].

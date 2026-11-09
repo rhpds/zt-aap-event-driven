@@ -1,0 +1,44 @@
+---
+# Seed Floci using AWS CLI (works against emulator without become).
+- name: Ensure demo S3 bucket exists
+  ansible.builtin.command:
+    argv:
+      - aws
+      - --endpoint-url
+      - "{{ floci_endpoint }}"
+      - s3
+      - mb
+      - "s3://{{ floci_s3_bucket }}"
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ floci_aws_access_key }}"
+    AWS_SECRET_ACCESS_KEY: "{{ floci_aws_secret_key }}"
+    AWS_DEFAULT_REGION: "{{ floci_region }}"
+  register: mb
+  changed_when: mb.rc == 0
+  failed_when: false
+
+- name: Create intentionally open security group (best effort)
+  ansible.builtin.shell: |
+    set -euo pipefail
+    aws --endpoint-url="{{ floci_endpoint }}" ec2 create-security-group \
+      --group-name "{{ floci_sg_name }}" \
+      --description "Intentionally open SG for EDA lab" 2>/dev/null || true
+    GID=$(aws --endpoint-url="{{ floci_endpoint }}" ec2 describe-security-groups \
+      --group-names "{{ floci_sg_name }}" \
+      --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null || true)
+    if [[ -n "${GID}" && "${GID}" != "None" ]]; then
+      aws --endpoint-url="{{ floci_endpoint }}" ec2 authorize-security-group-ingress \
+        --group-id "${GID}" --protocol tcp --port 22 --cidr 0.0.0.0/0 2>/dev/null || true
+    fi
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ floci_aws_access_key }}"
+    AWS_SECRET_ACCESS_KEY: "{{ floci_aws_secret_key }}"
+    AWS_DEFAULT_REGION: "{{ floci_region }}"
+  changed_when: true
+  failed_when: false
+
+- name: Seed summary
+  ansible.builtin.debug:
+    msg: >-
+      Seeded bucket {{ floci_s3_bucket }} and SG {{ floci_sg_name }} on {{ floci_endpoint }}.
+      EC2 runaway instance may require emulator-specific create in staging.

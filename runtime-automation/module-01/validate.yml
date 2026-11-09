@@ -1,0 +1,29 @@
+---
+- name: Module 1 Validation
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    track_file: "{{ lookup('env', 'HOME') }}/eda-lab/track"
+  tasks:
+    - name: Read track marker
+      ansible.builtin.slurp:
+        src: "{{ track_file }}"
+      register: track_raw
+      failed_when: false
+
+    - name: Parse track
+      ansible.builtin.set_fact:
+        track: "{{ (track_raw.content | b64decode | trim) if track_raw.content is defined else '' }}"
+
+    - name: Track marker must be s3, sg, or ec2
+      validation_check:
+        check: "{{ track in ['s3', 'sg', 'ec2'] }}"
+        pass_msg: "Track selected: {{ track }}"
+        error_msg: "Set ~/eda-lab/track to s3, sg, or ec2"
+
+    - name: Starter or learner rulebook exists
+      validation_check:
+        check: "{{ lookup('pipe', 'test -f ' + lookup('env', 'HOME') + '/eda-lab/rulebooks/alert-response.yml && echo yes || echo no') == 'yes' }}"
+        pass_msg: "Rulebook alert-response.yml present"
+        error_msg: "Copy/create ~/eda-lab/rulebooks/alert-response.yml"

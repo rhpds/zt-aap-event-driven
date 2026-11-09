@@ -1,0 +1,29 @@
+---
+- name: Module 4 Solve
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    track_file: "{{ lookup('env', 'HOME') }}/eda-lab/track"
+    floci_endpoint: "{{ lookup('env', 'FLOCI_ENDPOINT') | default('http://127.0.0.1:4566', true) }}"
+  tasks:
+    - name: Read track
+      ansible.builtin.slurp:
+        src: "{{ track_file }}"
+      register: track_raw
+      failed_when: false
+
+    - name: Parse track
+      ansible.builtin.set_fact:
+        track: "{{ (track_raw.content | b64decode | trim) if track_raw.content is defined else 's3' }}"
+
+    - name: Run remediate playbook for track
+      ansible.builtin.command:
+        argv:
+          - ansible-playbook
+          - "{{ playbook_dir }}/../../automation/ansible/playbooks/{{ 'remediate_s3.yml' if track == 's3' else ('remediate_sg.yml' if track == 'sg' else 'remediate_ec2.yml') }}"
+          - -e
+          - "floci_endpoint={{ floci_endpoint }}"
+      environment:
+        FLOCI_ENDPOINT: "{{ floci_endpoint }}"
+      failed_when: false

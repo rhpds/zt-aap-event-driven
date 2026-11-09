@@ -1,0 +1,24 @@
+---
+- name: Verify SG quarantine on Floci
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    floci_endpoint: "{{ lookup('env', 'FLOCI_ENDPOINT') | default('http://127.0.0.1:4566', true) }}"
+    sg_name: "eda-lab-open"
+  tasks:
+    - name: Describe security group
+      amazon.aws.ec2_security_group_info:
+        filters:
+          group-name:
+            - "{{ sg_name }}"
+        region: us-east-1
+        access_key: test
+        secret_key: test
+        endpoint_url: "{{ floci_endpoint }}"
+      register: sg_info
+      failed_when: false
+
+    - name: Report verify
+      ansible.builtin.debug:
+        msg: "Verify SG {{ sg_name }} against {{ floci_endpoint }}"

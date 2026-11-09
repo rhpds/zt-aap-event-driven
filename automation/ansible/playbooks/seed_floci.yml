@@ -1,0 +1,9 @@
+---
+- name: Seed Floci lab resources
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    floci_endpoint: "{{ lookup('env', 'FLOCI_ENDPOINT') | default('http://127.0.0.1:4566', true) }}"
+  roles:
+    - role: floci_seed

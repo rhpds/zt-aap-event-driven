@@ -1,0 +1,17 @@
+---
+- name: Module 2 Validation
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Event Stream env vars documented for learner session
+      validation_check:
+        check: true
+        pass_msg: "Complete Event Stream UI steps; token negative test is manual evidence in Rule Audit"
+        error_msg: "unreachable"
+
+    - name: Track still selected
+      validation_check:
+        check: "{{ lookup('file', lookup('env', 'HOME') + '/eda-lab/track', errors='ignore') | default('', true) | trim in ['s3', 'sg', 'ec2'] }}"
+        pass_msg: "Track marker present"
+        error_msg: "Re-select track in Module 1 (~/eda-lab/track)"

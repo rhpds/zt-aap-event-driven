@@ -1,0 +1,29 @@
+---
+# Project Zero instance definitions.
+# Sizing mirrors publishing-house/spec.yaml (author-editable).
+containers: []
+virtualmachines:
+  - name: "aap"
+    image: "rhel-9.5"
+    memory: "32G"
+    cores: 8
+    image_size: "100G"
+    tags:
+      - key: "AnsibleGroup"
+        value: "aap"
+      - key: "Role"
+        value: "aap"
+    networks:
+      - default
+  - name: "floci"
+    image: "rhel-9.5"
+    memory: "16G"
+    cores: 4
+    image_size: "50G"
+    tags:
+      - key: "AnsibleGroup"
+        value: "floci"
+      - key: "Role"
+        value: "floci"
+    networks:
+      - default

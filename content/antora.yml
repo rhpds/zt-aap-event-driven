@@ -1,0 +1,17 @@
+name: modules
+title: Event-Driven Ansible — From Event to Verified Outcome
+version: ~
+nav:
+  - modules/ROOT/nav.adoc
+
+asciidoc:
+  attributes:
+    experimental: true
+    page-pagination: true
+    guid: '%GUID%'
+    lab-title: Event-Driven Ansible — From Event to Verified Outcome
+    aap-web-url: '%AAP_WEB_URL%'
+    aap-eda-url: '%AAP_EDA_URL%'
+    floci-endpoint: '%FLOCI_ENDPOINT%'
+    floci-host: '%FLOCI_HOST%'
+    student-user: '%USER%'

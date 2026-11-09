@@ -1,0 +1,112 @@
+---
+# SETUP — Environment Setup (Zero-Touch)
+# Prepares Floci host materials and documents AAP object expectations.
+# Full AAP Controller/EDA object creation is completed when staging CI is available.
+
+- name: Environment Setup
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    eda_lab_root: /usr/local/share/eda-lab
+    student_eda_lab: "{{ lookup('env', 'HOME') }}/eda-lab"
+    floci_endpoint: "{{ lookup('env', 'FLOCI_ENDPOINT') | default('http://127.0.0.1:4566', true) }}"
+  tasks:
+    - name: Ensure lab material directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ eda_lab_root }}/rulebooks"
+        - "{{ eda_lab_root }}/bin"
+        - "{{ eda_lab_root }}/playbooks"
+        - "{{ student_eda_lab }}/rulebooks"
+        - "{{ student_eda_lab }}/bin"
+        - "{{ student_eda_lab }}/materials"
+
+    - name: Sync lab-materials into share and student home
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../lab-materials/"
+        dest: "{{ item }}"
+        mode: preserve
+      loop:
+        - "{{ eda_lab_root }}/"
+        - "{{ student_eda_lab }}/materials/"
+
+    - name: Install injector scripts as executable
+      ansible.builtin.file:
+        path: "{{ item }}"
+        mode: "0755"
+      loop:
+        - "{{ eda_lab_root }}/bin/inject-alert.sh"
+        - "{{ eda_lab_root }}/bin/reset-track.sh"
+        - "{{ student_eda_lab }}/materials/bin/inject-alert.sh"
+        - "{{ student_eda_lab }}/materials/bin/reset-track.sh"
+      failed_when: false
+
+    - name: Link injector into student bin
+      ansible.builtin.file:
+        src: "{{ student_eda_lab }}/materials/bin/inject-alert.sh"
+        dest: "{{ student_eda_lab }}/bin/inject-alert.sh"
+        state: link
+        force: true
+      failed_when: false
+
+    - name: Link reset script into student bin
+      ansible.builtin.file:
+        src: "{{ student_eda_lab }}/materials/bin/reset-track.sh"
+        dest: "{{ student_eda_lab }}/bin/reset-track.sh"
+        state: link
+        force: true
+      failed_when: false
+
+    - name: Ensure Floci container is running (Podman)
+      ansible.builtin.command:
+        argv:
+          - podman
+          - ps
+          - --filter
+          - name=floci
+          - --format
+          - "{{ '{{.Names}}' }}"
+      register: floci_ps
+      changed_when: false
+      failed_when: false
+
+    - name: Start Floci if missing
+      ansible.builtin.shell: |
+        set -euo pipefail
+        podman network exists floci-net || podman network create floci-net
+        podman rm -f floci >/dev/null 2>&1 || true
+        podman run -d --name floci --network floci-net -p 4566:4566 docker.io/floci/floci:latest
+      when: floci_ps.stdout | trim | length == 0
+      failed_when: false
+
+    - name: Wait for Floci health endpoint
+      ansible.builtin.uri:
+        url: "{{ floci_endpoint }}/_localstack/health"
+        status_code: [200, 404]
+      register: floci_health
+      retries: 15
+      delay: 2
+      until: floci_health.status is defined
+      failed_when: false
+
+    - name: Seed Floci demo resources
+      ansible.builtin.command:
+        argv:
+          - ansible-playbook
+          - "{{ playbook_dir }}/../automation/ansible/playbooks/seed_floci.yml"
+          - -e
+          - "floci_endpoint={{ floci_endpoint }}"
+      environment:
+        ANSIBLE_ROLES_PATH: "{{ playbook_dir }}/../automation/ansible/roles"
+        FLOCI_ENDPOINT: "{{ floci_endpoint }}"
+      failed_when: false
+
+    - name: Setup summary
+      ansible.builtin.debug:
+        msg: >-
+          Lab materials synced. Floci endpoint {{ floci_endpoint }}.
+          Configure AAP projects/JTs/activations in staging automation (Controller API).

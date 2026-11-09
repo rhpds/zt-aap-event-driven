@@ -1,0 +1,8 @@
+---
+floci_endpoint: "http://127.0.0.1:4566"
+floci_aws_access_key: "test"
+floci_aws_secret_key: "test"
+floci_region: "us-east-1"
+floci_s3_bucket: "eda-lab-public"
+floci_sg_name: "eda-lab-open"
+floci_instance_name: "eda-lab-runaway"

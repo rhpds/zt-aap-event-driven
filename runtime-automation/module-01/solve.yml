@@ -1,0 +1,19 @@
+---
+- name: Module 1 Solve
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Default track to s3 if unset
+      ansible.builtin.copy:
+        dest: "{{ lookup('env', 'HOME') }}/eda-lab/track"
+        content: "s3\n"
+        mode: "0644"
+      failed_when: false
+
+    - name: Install starter rulebook for S3 track
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../../lab-materials/rulebooks/alert-response.starter.yml"
+        dest: "{{ lookup('env', 'HOME') }}/eda-lab/rulebooks/alert-response.yml"
+        mode: "0644"
+        remote_src: false

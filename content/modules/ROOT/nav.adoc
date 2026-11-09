@@ -1,0 +1,5 @@
+* xref:index.adoc[Lab Overview]
+* xref:module-01-pick-track.adoc[1. Pick your track + first match]
+* xref:module-02-event-streams.adoc[2. Event Streams]
+* xref:module-03-guardrails.adoc[3. Guardrails]
+* xref:module-04-verified-outcome.adoc[4. Verified outcome]

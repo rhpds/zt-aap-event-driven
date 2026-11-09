@@ -1,0 +1,9 @@
+---
+- name: Module 2 Solve
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Reminder — Event Stream objects are created in AAP UI / Contoller automation
+      ansible.builtin.debug:
+        msg: "Solve for Module 2 requires AAP API automation in staging; placeholder only."

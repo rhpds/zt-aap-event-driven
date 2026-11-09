@@ -1,0 +1,22 @@
+---
+- name: Remediate S3 public exposure on Floci
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    floci_endpoint: "{{ lookup('env', 'FLOCI_ENDPOINT') | default('http://127.0.0.1:4566', true) }}"
+    bucket: "eda-lab-public"
+  tasks:
+    - name: Enable Block Public Access
+      amazon.aws.s3_bucket:
+        name: "{{ bucket }}"
+        state: present
+        public_access:
+          block_public_acls: true
+          block_public_policy: true
+          ignore_public_acls: true
+          restrict_public_buckets: true
+        access_key: test
+        secret_key: test
+        region: us-east-1
+        endpoint_url: "{{ floci_endpoint }}"

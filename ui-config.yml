@@ -1,0 +1,24 @@
+---
+antora:
+  name: modules
+  dir: www
+  modules:
+    - name: index
+      label: "Introduction"
+    - name: module-01-pick-track
+      label: "1. Pick track + first match"
+    - name: module-02-event-streams
+      label: "2. Event Streams"
+    - name: module-03-guardrails
+      label: "3. Guardrails"
+    - name: module-04-verified-outcome
+      label: "4. Verified outcome"
+
+tabs:
+  - name: ">_ terminal"
+    path: /wetty
+    port: 443
+  - name: AAP Controller
+    url: "{aap-web-url}"
+  - name: Event-Driven Ansible
+    url: "{aap-eda-url}"

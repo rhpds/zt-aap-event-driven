@@ -1,0 +1,113 @@
+= Module 1: Pick your track + first match and activation
+:sectnums:
+:module: 01
+
+== Objectives
+
+* Select one Floci cloud track and record it for validation
+* Create a rulebook that matches your track's alert and runs a Job Template
+* Configure a rulebook activation and find the match in Rule Audit
+
+Time: ~35 minutes
+
+== Lab map
+
+EDA reacts to *events*. A rulebook defines:
+
+. *Source* — where events come from (webhook for this module)
+. *Condition* — when to act
+. *Action* — what to run (usually a Controller Job Template)
+
+You will grow *one* file — `~/eda-lab/rulebooks/alert-response.yml` — across all modules.
+
+== Choose your track
+
+In the terminal:
+
+[source,bash]
+----
+mkdir -p ~/eda-lab/rulebooks
+# Pick ONE:
+echo s3 > ~/eda-lab/track    # Track A — S3
+# echo sg > ~/eda-lab/track  # Track B — Security group
+# echo ec2 > ~/eda-lab/track # Track C — Runaway instance
+cat ~/eda-lab/track
+----
+
+Remember your choice. Validate reads `~/eda-lab/track`.
+
+== Shared: copy the starter rulebook
+
+[source,bash]
+----
+cp /usr/local/share/eda-lab/rulebooks/alert-response.starter.yml \
+  ~/eda-lab/rulebooks/alert-response.yml
+----
+
+If the share path is missing, copy from the lab materials directory shown by your instructor
+or from `~/eda-lab/materials/rulebooks/alert-response.starter.yml`.
+
+Open the file. You will set the condition `alertname` and the Job Template name for your track.
+
+== Track procedures: first match
+
+=== Track A — S3
+
+Edit `~/eda-lab/rulebooks/alert-response.yml` so the rule matches
+`alertname == "S3PublicExposure"` and the action runs Job Template
+`Remediate - S3 BPA`.
+
+=== Track B — Security group
+
+Match `alertname == "OpenSecurityGroup"` and run
+`Remediate - SG Quarantine`.
+
+=== Track C — Runaway instance
+
+Match `alertname == "RunawayInstance"` and run
+`Remediate - Stop Instance`.
+
+== Create the project and activation
+
+. In *Event-Driven Ansible*, ensure a Project points at your rulebook location
+  (lab bootstrap may already sync `~/eda-lab/rulebooks` — follow the on-screen path).
+. Create a *Rulebook Activation*:
+  * Name: `alert-response`
+  * Rulebook: `alert-response.yml`
+  * Decision environment: lab default
+  * Controller token: lab-provided credential
+. Start the activation and wait until status is *Running*.
+
+== Inject a happy-path event
+
+Shared webhook URL for Module 1 (before Event Streams):
+
+[source,bash]
+----
+export WEBHOOK_URL="http://localhost:5000/endpoint"   # replace with activation listen URL if different
+~/eda-lab/bin/inject-alert.sh --track "$(cat ~/eda-lab/track)" --env prod --severity critical
+----
+
+== Confirm in Rule Audit
+
+. Open *Event-Driven Ansible* → *Rule Audit*
+. Find the matching event for your `alertname`
+. Confirm the remediate Job Template started in Controller
+
+NOTE: In Module 1 it is OK if Floci is not fully fixed yet — you only need the match and job launch.
+Module 4 focuses on verified Floci state.
+
+== Validate
+
+Click *Validate* for Module 1. It checks:
+
+* `~/eda-lab/track` is set to `s3`, `sg`, or `ec2`
+* Activation `alert-response` is running
+* A recent Rule Audit entry exists for your track alert
+
+== Key takeaways
+
+* Source → condition → action is the EDA mental model
+* One activation listens continuously
+* Rule Audit is your evidence trail
+* Track choice only changes alert name and Job Template — not the model

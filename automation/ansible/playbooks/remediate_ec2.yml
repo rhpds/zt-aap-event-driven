@@ -1,0 +1,33 @@
+---
+- name: Stop runaway instance on Floci
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    floci_endpoint: "{{ lookup('env', 'FLOCI_ENDPOINT') | default('http://127.0.0.1:4566', true) }}"
+    instance_name: "eda-lab-runaway"
+  tasks:
+    - name: Find instance by Name tag
+      amazon.aws.ec2_instance_info:
+        region: us-east-1
+        access_key: test
+        secret_key: test
+        endpoint_url: "{{ floci_endpoint }}"
+        filters:
+          "tag:Name": "{{ instance_name }}"
+      register: found
+      failed_when: false
+
+    - name: Stop matching instances
+      amazon.aws.ec2_instance:
+        state: stopped
+        instance_ids: "{{ found.instances | map(attribute='instance_id') | list }}"
+        region: us-east-1
+        access_key: test
+        secret_key: test
+        endpoint_url: "{{ floci_endpoint }}"
+        tags:
+          quarantine: "true"
+          eda_lab: "true"
+      when: found.instances is defined and (found.instances | length) > 0
+      failed_when: false

@@ -1,0 +1,91 @@
+= Module 2: Event Streams — safe intake
+:sectnums:
+:module: 02
+
+== Objectives
+
+* Secure inbound events with Event Streams
+* Prove an invalid token is rejected
+* Confirm a valid token still matches your track alert
+
+Time: ~25 minutes
+
+== Why Event Streams
+
+A raw webhook is fine for learning. Production intake should be *authenticated*.
+Event Streams give you a managed HTTPS endpoint and token so only trusted senders reach your rulebook.
+
+== Create an Event Stream
+
+. In *Event-Driven Ansible*, open *Event Streams*
+. Create a stream (for example `lab-alerts`)
+. Copy the *URL* and generate/copy the *token*
+. Store them for the injector:
+
+[source,bash]
+----
+export EVENT_STREAM_URL="https://REPLACE_WITH_STREAM_URL"
+export EVENT_STREAM_TOKEN="REPLACE_WITH_TOKEN"
+----
+
+== Point the rulebook at Event Streams
+
+Update `~/eda-lab/rulebooks/alert-response.yml` so the *source* uses the lab Event Stream
+source plugin / credentials documented in `~/eda-lab/materials/rulebooks/README.md`
+(bootstrap replaces the Module 1 webhook source).
+
+Restart or update the `alert-response` activation so it reloads the rulebook.
+
+== Negative test: bad token
+
+[source,bash]
+----
+~/eda-lab/bin/inject-alert.sh \
+  --track "$(cat ~/eda-lab/track)" \
+  --env prod --severity critical \
+  --url "$EVENT_STREAM_URL" \
+  --token "invalid-token-on-purpose"
+----
+
+Expect: HTTP failure or no new successful Rule Audit match for a remediation job.
+
+== Track procedures: good token
+
+=== Track A — S3
+
+[source,bash]
+----
+~/eda-lab/bin/inject-alert.sh --track s3 --env prod --severity critical \
+  --url "$EVENT_STREAM_URL" --token "$EVENT_STREAM_TOKEN"
+----
+
+=== Track B — Security group
+
+[source,bash]
+----
+~/eda-lab/bin/inject-alert.sh --track sg --env prod --severity critical \
+  --url "$EVENT_STREAM_URL" --token "$EVENT_STREAM_TOKEN"
+----
+
+=== Track C — Runaway instance
+
+[source,bash]
+----
+~/eda-lab/bin/inject-alert.sh --track ec2 --env prod --severity critical \
+  --url "$EVENT_STREAM_URL" --token "$EVENT_STREAM_TOKEN"
+----
+
+Confirm Rule Audit shows a match for your track.
+
+== Validate
+
+Click *Validate*. Checks:
+
+* Event Stream `lab-alerts` (or lab-configured name) exists
+* A successful match occurred with a valid token after the negative test
+
+== Key takeaways
+
+* Event Streams harden *how* events enter AAP
+* Rule logic can stay the same when intake is secured
+* Always test credential failure on purpose

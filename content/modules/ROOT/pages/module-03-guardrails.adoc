@@ -1,0 +1,105 @@
+= Module 3: Guardrails — when not to act
+:sectnums:
+:module: 03
+
+== Objectives
+
+* Add environment and severity conditions to your rulebook
+* Demonstrate that noisy or out-of-scope alerts do *not* remediate
+* Keep the prod/critical happy path working
+
+Time: ~25 minutes
+
+== Why guardrails
+
+In production, not every alert should change the cloud. Your rulebook should encode
+*when not to act* — for example staging traffic or informational severity.
+
+NOTE: Throttling alert storms is a useful stretch topic. It is *not* required for
+Validate in this 2-hour lab.
+
+== Edit the rulebook
+
+Open `~/eda-lab/rulebooks/alert-response.yml` and tighten the condition so the action
+runs only when *all* of the following are true (field names must match the injector payload):
+
+* `alertname` matches your track
+* `env` is `prod`
+* `severity` is `critical` (or `warning` if you intentionally allow it — default lab path uses `critical`)
+
+Save and reload/restart the activation.
+
+== Inject noise (shared pattern)
+
+Wrong environment:
+
+[source,bash]
+----
+~/eda-lab/bin/inject-alert.sh \
+  --track "$(cat ~/eda-lab/track)" \
+  --env staging --severity critical \
+  --url "$EVENT_STREAM_URL" --token "$EVENT_STREAM_TOKEN"
+----
+
+Low severity:
+
+[source,bash]
+----
+~/eda-lab/bin/inject-alert.sh \
+  --track "$(cat ~/eda-lab/track)" \
+  --env prod --severity info \
+  --url "$EVENT_STREAM_URL" --token "$EVENT_STREAM_TOKEN"
+----
+
+Expect: *no* new remediate job for those events. Use Rule Audit to confirm skip / no-action.
+
+== Track procedures: re-test happy path
+
+=== Track A — S3
+
+[source,bash]
+----
+~/eda-lab/bin/inject-alert.sh --track s3 --env prod --severity critical \
+  --url "$EVENT_STREAM_URL" --token "$EVENT_STREAM_TOKEN"
+----
+
+=== Track B — Security group
+
+[source,bash]
+----
+~/eda-lab/bin/inject-alert.sh --track sg --env prod --severity critical \
+  --url "$EVENT_STREAM_URL" --token "$EVENT_STREAM_TOKEN"
+----
+
+=== Track C — Runaway instance
+
+[source,bash]
+----
+~/eda-lab/bin/inject-alert.sh --track ec2 --env prod --severity critical \
+  --url "$EVENT_STREAM_URL" --token "$EVENT_STREAM_TOKEN"
+----
+
+Confirm a remediate job *does* run for the happy path.
+
+== Rule Audit contrast
+
+Find:
+
+. At least one *skip* / non-remediate event (staging or info)
+. At least one *match* that launched remediation
+
+You will reuse this literacy in Module 4.
+
+== Validate
+
+Click *Validate*. Checks:
+
+* Rulebook on disk (or synced project) still contains env/severity conditions
+* Recent staging or info inject did not create a successful remediate job
+* Prod/critical inject still can match
+
+== Key takeaways
+
+* Conditions encode production judgment
+* Skipping is a successful outcome when the event is out of policy
+* Rule Audit explains both action and inaction

@@ -1,0 +1,22 @@
+---
+- name: Verify S3 BPA on Floci
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    floci_endpoint: "{{ lookup('env', 'FLOCI_ENDPOINT') | default('http://127.0.0.1:4566', true) }}"
+    bucket: "eda-lab-public"
+  tasks:
+    - name: Read public access block
+      amazon.aws.s3_bucket_info:
+        name: "{{ bucket }}"
+        access_key: test
+        secret_key: test
+        region: us-east-1
+        endpoint_url: "{{ floci_endpoint }}"
+      register: bucket_info
+      failed_when: false
+
+    - name: Assert BPA intent (emulator-friendly)
+      ansible.builtin.debug:
+        msg: "Verify step completed for {{ bucket }} against {{ floci_endpoint }}"

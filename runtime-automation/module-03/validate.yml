@@ -1,0 +1,23 @@
+---
+- name: Module 3 Validation
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    rulebook: "{{ lookup('env', 'HOME') }}/eda-lab/rulebooks/alert-response.yml"
+  tasks:
+    - name: Load rulebook text
+      ansible.builtin.slurp:
+        src: "{{ rulebook }}"
+      register: rb
+      failed_when: false
+
+    - name: Decode
+      ansible.builtin.set_fact:
+        rb_text: "{{ (rb.content | b64decode) if rb.content is defined else '' }}"
+
+    - name: Guardrail fields present in rulebook
+      validation_check:
+        check: "{{ ('env' in rb_text) and ('severity' in rb_text or 'critical' in rb_text) }}"
+        pass_msg: "Rulebook includes env/severity guardrail fields"
+        error_msg: "Add env and severity conditions to alert-response.yml"

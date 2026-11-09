@@ -1,0 +1,18 @@
+---
+# Starter rulebook — Module 1
+# Grow this single file through Modules 2–4 (Event Streams source, guardrails, verify).
+- name: Alert response
+  hosts: all
+  sources:
+    - ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5000
+  rules:
+    - name: Match track alert and remediate
+      condition: event.payload.alertname == "S3PublicExposure"
+      action:
+        run_job_template:
+          name: "Remediate - S3 BPA"
+          organization: Default
+# Track B: change condition to OpenSecurityGroup and JT to "Remediate - SG Quarantine"
+# Track C: change condition to RunawayInstance and JT to "Remediate - Stop Instance"
