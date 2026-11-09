@@ -1,10 +1,11 @@
 # zt-aap-event-driven
 
-Automation answers "what should happen?" but something still has to say when. In this hands-on workshop, you'll learn how Event-Driven Ansible turns that question into code. Using rulebooks, you'll codify your response to real-world events so your infrastructure responds in seconds, without waiting for a human to notice.
+**Event-Driven Ansible: From Event to Verified Outcome**
 
-You'll start at the command line, building your first rulebook around a webhook source, the simplest way to understand how sources, conditions, and actions work together. From there, you'll bring that rulebook into Ansible Automation Platform 2.6, where rulebook activations run continuously, restart on failure, and record every matching event in the Rule Audit. You'll secure inbound events with Event Streams, then put the platform to work against sources your enterprise already uses: Splunk alerts driving automated response, Kafka event streams fanning out to multiple listeners, and Prometheus metrics triggering targeted remediation.
+New to Event-Driven Ansible? Start with the core model—sources, conditions, and actions—then take it further than "alert runs a job." In this Zero-Touch lab on Ansible Automation Platform 2.6, you create one rulebook and harden it step by step: run it as an activation, secure intake with Event Streams, add environment and severity guardrails plus throttling, then remediate, verify, and escalate when verification fails—using Rule Audit to explain every decision. Events are Alertmanager-style HTTP alerts via a lab injector.
 
-**Owner:** nmartins0611
+**Owner:** nmartins0611  
+**Jira:** [RHDPCD-2239](https://redhat.atlassian.net/browse/RHDPCD-2239)
 
 ---
 

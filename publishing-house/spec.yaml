@@ -14,15 +14,44 @@ project:
   showroom_type: "zero_touch"
   intake_type: "new"
   automation_type: "ansible"
-  description: "Automation answers \"what should happen?\" but something still has to say when. In this hands-on workshop, you'll learn how Event-Driven Ansible turns that question into code. Using rulebooks, you'll codify your response to real-world events so your infrastructure responds in seconds, without waiting for a human to notice.  You'll start at the command line, building your first rulebook around a webhook source, the simplest way to understand how sources, conditions, and actions work together. From there, you'll bring that rulebook into Ansible Automation Platform 2.6, where rulebook activations run continuously, restart on failure, and record every matching event in the Rule Audit. You'll secure inbound events with Event Streams, then put the platform to work against sources your enterprise already uses: Splunk alerts driving automated response, Kafka event streams fanning out to multiple listeners, and Prometheus metrics triggering targeted remediation."
+  description: "New to Event-Driven Ansible? Start with the core model—sources, conditions, and actions—then take it further than \"alert runs a job.\" In this Zero-Touch lab on Ansible Automation Platform 2.6, you create one rulebook and harden it step by step: run it as an activation, secure intake with Event Streams, add environment and severity guardrails plus throttling, then remediate, verify, and escalate when verification fails—using Rule Audit to explain every decision. Events are Alertmanager-style HTTP alerts via a lab injector."
   # content_reviewer_email and infra_reviewer_email are assigned by the RHDP team — not set by the author
-  jira_ticket: ""
-  workflow_id: ""
+  jira_ticket: "RHDPCD-2239"
+  workflow_id: "f23b8332-c793-4d7d-9314-0a89bdc95409"
 
 spec:
-  title: ""
-  learning_objectives: []
-  modules: []              # [{id, title, duration_min}] — written by intake Phase 4; id is stable (e.g. module-01)
+  title: "Event-Driven Ansible: From Event to Verified Outcome"
+  learning_objectives:
+    - "Create a rulebook that defines a source, condition, and action for an alert-shaped event"
+    - "Configure a rulebook activation on Ansible Automation Platform 2.6 so the rulebook listens continuously"
+    - "Monitor matching events and actions in Rule Audit"
+    - "Secure inbound events with Event Streams and verify that invalid credentials are rejected"
+    - "Implement environment and severity conditions that skip noisy or out-of-scope alerts"
+    - "Configure throttling so alert storms do not create uncontrolled job runs"
+    - "Automate a remediate-then-verify response path from a matching alert"
+    - "Verify that a failed verification triggers an escalation action"
+    - "Analyze Rule Audit entries to explain skip, remediate, and escalate decisions"
+  modules:
+    - id: module-01
+      title: "What EDA is (and isn't)"
+      duration_min: 25
+      status: not_started
+    - id: module-02
+      title: "Your first rulebook activation"
+      duration_min: 30
+      status: not_started
+    - id: module-03
+      title: "Event Streams: safe intake"
+      duration_min: 30
+      status: not_started
+    - id: module-04
+      title: "Guardrails: when not to act"
+      duration_min: 30
+      status: not_started
+    - id: module-05
+      title: "Verified outcome"
+      duration_min: 40
+      status: not_started
   environment:
     platform: ""               # ocp | rhel-vms — determines which sizing fields apply
     topology: ""               # shared-cluster | per-student | cnv-pool
@@ -45,7 +74,7 @@ spec:
     vms_per_student: []
 
     # --- Common fields (both platforms) ---
-    aap_version: ""                    # required if AAP in products
+    aap_version: "2.6"                 # required if AAP in products
     ai_requirement: ""                 # maas | gpu | none
     ai_model_tier: ""                  # open-source | frontier (if ai_requirement = maas or gpu)
     ai_model_name: ""                  # specific model e.g. granite-3.1-8b
@@ -55,8 +84,8 @@ spec:
     external_services: []              # named external service dependencies e.g. [github.com]
     gpu_nodes: 0                       # number of GPU nodes (0 = none)
     gpu_type: ""                       # e.g. NVIDIA A100 40GB (required if gpu_nodes > 0)
-  duration_hours: null
-  audience: ""               # beginner | intermediate | advanced
+  duration_hours: 3.5
+  audience: "beginner"               # beginner | intermediate | advanced
 
 development:
   automation:
@@ -79,11 +108,21 @@ tracking:
 approval_checklist:
 
   content:
-    prerequisites_verifiable: null
-    assessment_strategy: ""
+    prerequisites_verifiable: true
+    assessment_strategy: "Zero-Touch solve/validate against activation state, job counts under throttle, remediate/verify/escalate outcomes, and Rule Audit trails for skip vs act paths."
     catalog_gap: ""
-    design_overview: ""
-    module_summaries: []
+    design_overview: "Introductory Zero-Touch EDA lab on AAP 2.6 where learners create one rulebook and harden it through Event Streams, guardrails, throttling, and closed-loop verify/escalate, using Alertmanager-style alerts and Rule Audit as evidence."
+    module_summaries:
+      - title: "What EDA is (and isn't)"
+        overview: "Build a first rulebook (source, condition, action) against an alert-shaped webhook and contrast event-driven action with running the same Job Template manually."
+      - title: "Your first rulebook activation"
+        overview: "Deploy the rulebook as an AAP 2.6 activation, keep it listening, and find matches in Rule Audit."
+      - title: "Event Streams: safe intake"
+        overview: "Move intake to Event Streams; prove bad tokens fail and valid tokens still match the same rulebook."
+      - title: "Guardrails: when not to act"
+        overview: "Add environment/severity conditions and throttling; inject noise and storms; confirm skips and capped job counts."
+      - title: "Verified outcome"
+        overview: "Extend the rulebook for remediate → verify → escalate, then explain skip/remediate/escalate decisions in Rule Audit."
     rcars_overlap_pct: null
     rcars_top_matches: []
     rejections: []

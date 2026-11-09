@@ -3,20 +3,13 @@ kind: Component
 metadata:
   name: zt-aap-event-driven
   title: zt-aap-event-driven
-  description: "Automation answers \"what should happen?\" but something still has
-    to say when. In this hands-on workshop, you'll learn how Event-Driven
-    Ansible turns that question into code. Using rulebooks, you'll codify your
-    response to real-world events so your infrastructure responds in seconds,
-    without waiting for a human to notice.  You'll start at the command line,
-    building your first rulebook around a webhook source, the simplest way to
-    understand how sources, conditions, and actions work together. From there,
-    you'll bring that rulebook into Ansible Automation Platform 2.6, where
-    rulebook activations run continuously, restart on failure, and record every
-    matching event in the Rule Audit. You'll secure inbound events with Event
-    Streams, then put the platform to work against sources your enterprise
-    already uses: Splunk alerts driving automated response, Kafka event streams
-    fanning out to multiple listeners, and Prometheus metrics triggering
-    targeted remediation."
+  description: 'New to Event-Driven Ansible? Start with the core model—sources, conditions,
+    and actions—then take it further than "alert runs a job." In this Zero-Touch lab
+    on Ansible Automation Platform 2.6, you create one rulebook and harden it step
+    by step: run it as an activation, secure intake with Event Streams, add environment
+    and severity guardrails plus throttling, then remediate, verify, and escalate when
+    verification fails—using Rule Audit to explain every decision. Events are Alertmanager-style
+    HTTP alerts via a lab injector.'
   annotations:
     ph.rhdp.io/content-type: lab
     ph.rhdp.io/deployment-mode: rhdp_published
@@ -24,21 +17,24 @@ metadata:
     ph.rhdp.io/owner: nmartins@redhat.com
     backstage.io/techdocs-ref: dir:.
     github.com/project-slug: rhpds/zt-aap-event-driven
-    ph.rhdp.io/created-at: 2026-11-09T08:32:39.040Z
+    ph.rhdp.io/created-at: 2026-11-09 08:32:39.040000+00:00
   tags:
-    - publishing-house
-    - lab
-    - rhdp-published
+  - publishing-house
+  - lab
+  - rhdp-published
   links:
-    - url: https://github.com/rhpds/zt-aap-event-driven
-      title: Repository
-      icon: github
-    - url: https://devspaces.apps.ocpv-infra02.wdc07.infra.demo.redhat.com#https://github.com/rhpds/zt-aap-event-driven
-      title: Open in DevSpaces
-      icon: catalog
-    - url: https://central-api-publishing-house.apps.ocpv-infra02.wdc07.infra.demo.redhat.com
-      title: Central
-      icon: dashboard
+  - url: https://github.com/rhpds/zt-aap-event-driven
+    title: Repository
+    icon: github
+  - url: https://devspaces.apps.ocpv-infra02.wdc07.infra.demo.redhat.com#https://github.com/rhpds/zt-aap-event-driven
+    title: Open in DevSpaces
+    icon: catalog
+  - url: https://central-api-publishing-house.apps.ocpv-infra02.wdc07.infra.demo.redhat.com
+    title: Central
+    icon: dashboard
+  - url: https://redhat.atlassian.net/browse/RHDPCD-2239
+    title: Jira Epic
+    icon: dashboard
 spec:
   type: content
   lifecycle: experimental
