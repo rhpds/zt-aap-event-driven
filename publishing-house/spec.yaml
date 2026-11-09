@@ -120,7 +120,7 @@ approval_checklist:
   content:
     prerequisites_verifiable: true
     assessment_strategy: "Zero-Touch solve/validate for the chosen track: activation match, Event Stream auth, env/severity skips, Floci remediate+verify, and Rule Audit literacy."
-    catalog_gap: ""
+    catalog_gap: "Existing EDA labs cover rulebooks and remediation (httpd/network/Splunk CVE) but not a beginner AAP 2.6 path that combines Event Streams, env/severity guardrails, and choose-your-track Floci cloud remediate-verify (S3 BPA, open SG, runaway instance) with Rule Audit as the success criterion."
     design_overview: "Two-hour Zero-Touch intro to EDA on AAP 2.6: one evolving rulebook through Event Streams and guardrails, then choose-your-track Floci cloud remediation (S3, SG, or runaway instance) with verified outcome and Rule Audit."
     module_summaries:
       - title: "Pick your track + first match and activation"
@@ -131,8 +131,23 @@ approval_checklist:
         overview: "Add environment/severity conditions; inject noise for the chosen track; confirm skips."
       - title: "Verified outcome on your Floci track"
         overview: "Remediate and verify the chosen Floci misconfiguration; explain skip vs remediate in Rule Audit."
-    rcars_overlap_pct: null
-    rcars_top_matches: []
+    rcars_overlap_pct: 69
+    rcars_top_matches:
+      - title: "Ansible Automation Platform Roadshow 03 - Operational Efficiency"
+        ci_name: "zt-ansiblebu.zt-ans-bu-roadshow03.prod"
+        url: "https://catalog.demo.redhat.com/catalog?item=zt-ansiblebu.zt-ans-bu-roadshow03.prod"
+        relevance_score: 69
+        why_it_fits: "Teaches core EDA skills in AAP including rulebook activations and event-triggered remediation, plus Rule Audit practice."
+      - title: "Get started with Event-Driven Ansible and Ansible Rulebooks"
+        ci_name: "zt-ansiblebu.zt-ans-bu-eda-ansible-rulebook.prod"
+        url: "https://catalog.demo.redhat.com/catalog?item=zt-ansiblebu.zt-ans-bu-eda-ansible-rulebook.prod"
+        relevance_score: 64
+        why_it_fits: "Beginner intro to rulebook structure (source, condition, action) and automated remediation scenarios."
+      - title: "Defend,Contain and Comply"
+        ci_name: "zt-ansiblebu.zt-ans-defend-contain-comply.prod"
+        url: "https://catalog.demo.redhat.com/catalog?item=zt-ansiblebu.zt-ans-defend-contain-comply.prod"
+        relevance_score: 56
+        why_it_fits: "Includes rulebook writing, Token Event Stream, and rulebook activation for alert-driven containment."
     rejections: []
 
   infra:
