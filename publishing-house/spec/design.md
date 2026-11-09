@@ -71,16 +71,17 @@ Beginner (introduces EDA; finishes with intermediate guardrail and verify patter
 
 ## Infrastructure Requirements
 
-- **Cloud provider:** TBD — confirmed in infrastructure phase
-- **Cluster type:** TBD — confirmed in infrastructure phase
-- **OCP version:** TBD — confirmed in infrastructure phase
-- **Topology:** TBD — confirmed in infrastructure phase
-- **Sizing:** TBD — confirmed in infrastructure phase
-- **Automation approach:** Ansible (project.automation_type already set)
-- **AI/MaaS:** TBD — confirmed in infrastructure phase
-- **External services:** TBD — confirmed in infrastructure phase
+- **Cloud provider:** CNV
+- **Platform:** RHEL VMs (no OpenShift cluster required for the lab products)
+- **Topology:** Per-student
+- **Sizing (editable defaults):**
+  - 1× AAP (Controller + Event-Driven Ansible 2.6) — 8 vCPU, 32 GB RAM, 100 GB disk, RHEL 9
+  - 1× RHEL Floci host — 4 vCPU, 16 GB RAM, 50 GB disk, RHEL 9 (Podman + Floci on :4566; seed/reset + alert injector)
+- **Automation approach:** Ansible
+- **AI/MaaS:** None
+- **External services:** registry.redhat.io (AAP/EE images); quay.io (Floci image pull — confirm exact image host at staging); github.com (content/automation SCM as needed)
 - **AAP version:** 2.6
-- **Non-GA products:** TBD — confirmed in infrastructure phase
+- **Non-GA products:** None (all Red Hat products are GA; Floci is an open-source AWS emulator used as lab tooling)
 
 ## Assessment Strategy (Optional)
 
