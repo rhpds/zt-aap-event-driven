@@ -1,0 +1,46 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: zt-aap-event-driven
+  title: zt-aap-event-driven
+  description: "Automation answers \"what should happen?\" but something still has
+    to say when. In this hands-on workshop, you'll learn how Event-Driven
+    Ansible turns that question into code. Using rulebooks, you'll codify your
+    response to real-world events so your infrastructure responds in seconds,
+    without waiting for a human to notice.  You'll start at the command line,
+    building your first rulebook around a webhook source, the simplest way to
+    understand how sources, conditions, and actions work together. From there,
+    you'll bring that rulebook into Ansible Automation Platform 2.6, where
+    rulebook activations run continuously, restart on failure, and record every
+    matching event in the Rule Audit. You'll secure inbound events with Event
+    Streams, then put the platform to work against sources your enterprise
+    already uses: Splunk alerts driving automated response, Kafka event streams
+    fanning out to multiple listeners, and Prometheus metrics triggering
+    targeted remediation."
+  annotations:
+    ph.rhdp.io/content-type: lab
+    ph.rhdp.io/deployment-mode: rhdp_published
+    ph.rhdp.io/github-user: nmartins0611
+    ph.rhdp.io/owner: nmartins@redhat.com
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-slug: rhpds/zt-aap-event-driven
+    ph.rhdp.io/created-at: 2026-11-09T08:32:39.040Z
+  tags:
+    - publishing-house
+    - lab
+    - rhdp-published
+  links:
+    - url: https://github.com/rhpds/zt-aap-event-driven
+      title: Repository
+      icon: github
+    - url: https://devspaces.apps.ocpv-infra02.wdc07.infra.demo.redhat.com#https://github.com/rhpds/zt-aap-event-driven
+      title: Open in DevSpaces
+      icon: catalog
+    - url: https://central-api-publishing-house.apps.ocpv-infra02.wdc07.infra.demo.redhat.com
+      title: Central
+      icon: dashboard
+spec:
+  type: content
+  lifecycle: experimental
+  owner: rhdp-team
+  system: publishing-house
