@@ -4,6 +4,8 @@
 
 This ~2 hour Zero-Touch lab introduces Event-Driven Ansible (EDA) on Ansible Automation Platform 2.6. Learners create one rulebook and harden it into a production-style path: activation, Event Streams, environment/severity guardrails, then remediate → verify against a Floci AWS emulator. At the start they pick one cloud track (S3 public exposure, open security group, or runaway instance) and follow that track’s procedures through every module; instructions for all three tracks are provided. Success is a verified cloud outcome and a clear Rule Audit trail—not merely that a job started.
 
+**Catalog intent:** Replaces the beginner lab *Get started with Event-Driven Ansible and Ansible Rulebooks* (`zt-ansiblebu.zt-ans-bu-eda-ansible-rulebook.prod`), moving the intro from ansible-rulebook CLI to AAP 2.6 activations, Event Streams, guardrails, and cloud verified outcomes. Complementary to Roadshow 03 (ops/network) and Defend/Contain/Comply (Splunk/CVE)—not a replacement for those.
+
 ## Target Audience
 
 - **Role:** Platform engineers, SRE/Ops, and automation engineers new to Event-Driven Ansible
