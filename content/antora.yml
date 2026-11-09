@@ -14,4 +14,6 @@ asciidoc:
     aap-eda-url: '%AAP_EDA_URL%'
     floci-endpoint: '%FLOCI_ENDPOINT%'
     floci-host: '%FLOCI_HOST%'
+    floci-ui-url: '%FLOCI_UI_URL%'
+    gitea-url: '%GITEA_URL%'
     student-user: '%USER%'

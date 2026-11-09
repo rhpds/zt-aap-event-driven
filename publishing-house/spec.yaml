@@ -70,15 +70,16 @@ spec:
       - role: aap
         count: 1
         cpu: 8
-        ram_gb: 32
-        disk_gb: 100
-        os: rhel-9
+        ram_gb: 64
+        disk_gb: 80
+        os: aap-2.6-ceh
       - role: floci
         count: 1
         cpu: 4
         ram_gb: 16
         disk_gb: 50
         os: rhel-9
+    # Also provisions a Gitea container (4Gi) for lab SCM — see config/instances.yaml
 
     # --- Common fields (both platforms) ---
     aap_version: "2.6"                 # required if AAP in products

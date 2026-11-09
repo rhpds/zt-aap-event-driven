@@ -76,9 +76,10 @@ Beginner (introduces EDA; finishes with intermediate guardrail and verify patter
 - **Cloud provider:** CNV
 - **Platform:** RHEL VMs (no OpenShift cluster required for the lab products)
 - **Topology:** Per-student
-- **Sizing (editable defaults):**
-  - 1× AAP (Controller + Event-Driven Ansible 2.6) — 8 vCPU, 32 GB RAM, 100 GB disk, RHEL 9
-  - 1× RHEL Floci host — 4 vCPU, 16 GB RAM, 50 GB disk, RHEL 9 (Podman + Floci on :4566; seed/reset + alert injector)
+- **Sizing (matches `config/instances.yaml`):**
+  - 1× `control` — AAP 2.6 CEH image — 8 vCPU, 64 GB RAM, 80 Gi disk (Controller :443, EDA UI :8443, webhook :5000)
+  - 1× `floci` — RHEL 9.5 — 4 vCPU, 16 GB RAM, 50 Gi disk (Floci API :4566, Floci UI :4500)
+  - Gitea container — 4 Gi (lab SCM; migrates `rhpds/zt-aap-event-driven`)
 - **Automation approach:** Ansible
 - **AI/MaaS:** None
 - **External services:** registry.redhat.io (AAP/EE images); quay.io (Floci image pull — confirm exact image host at staging); github.com (content/automation SCM as needed)

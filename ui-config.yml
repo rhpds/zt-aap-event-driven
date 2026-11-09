@@ -22,3 +22,7 @@ tabs:
     url: "{aap-web-url}"
   - name: Event-Driven Ansible
     url: "{aap-eda-url}"
+  - name: Floci UI
+    url: "{floci-ui-url}"
+  - name: Gitea
+    url: "{gitea-url}"

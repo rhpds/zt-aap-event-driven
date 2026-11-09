@@ -1,4 +1,3 @@
-# ---
 ---
 containers:
   - name: gitea
@@ -47,8 +46,8 @@ containers:
       - >
         curl -X POST -H "accept: application/json" -H "Content-Type:
         application/json" -u 'gitea:ansible123!' -d '{"clone_addr":
-        "https://github.com/nmartins0611/zt-ans-defend-contain-comply.git", "repo_name":
-        "defend-contain-comply", "owner": "gitea", "private": false}'
+        "https://github.com/rhpds/zt-aap-event-driven.git", "repo_name":
+        "zt-aap-event-driven", "owner": "gitea", "private": false}'
         http://localhost:3000/api/v1/repos/migrate
     memory: 4Gi
     services:
@@ -65,7 +64,7 @@ containers:
         targetPort: 3000
         tls: true
         tls_termination: Edge
-        
+
 virtualmachines:
   - name: control
     image: aap-2.6-2-ceh-20251103
@@ -75,6 +74,8 @@ virtualmachines:
     tags:
       - key: AnsibleGroup
         value: isolated
+      - key: Role
+        value: aap
     networks:
       - default
       - secondary
@@ -152,65 +153,51 @@ virtualmachines:
         tls: true
         tls_termination: Edge
 
-  - name: "rhel01"
-    image: "rhel-9.5"
-    memory: "16G"
+  - name: floci
+    image: rhel-9.5
+    memory: 16G
     cores: 4
-    image_size: "30Gi"
+    image_size: 50Gi
     tags:
-      - key: "AnsibleGroup"
-        value: "isolated"
+      - key: AnsibleGroup
+        value: isolated
+      - key: Role
+        value: floci
     networks:
       - default
       - secondary
     services:
-      - name: cloud
+      - name: floci-api
         ports:
-          - port: 80
+          - port: 4566
             protocol: TCP
-            targetPort: 80
-            name: app-http
+            targetPort: 4566
+            name: floci-api
+      - name: floci-ui
+        ports:
+          - port: 4500
+            protocol: TCP
+            targetPort: 4500
+            name: floci-ui
     routes:
-      - name: app
-        host: app
-        service: app-http
-        targetPort: 80
+      - name: floci-api
+        host: floci
+        service: floci-api
+        targetPort: 4566
+        tls: true
+        tls_termination: Edge
+      - name: floci-ui
+        host: floci-ui
+        service: floci-ui
+        targetPort: 4500
         tls: true
         tls_termination: Edge
     userdata: |-
       #cloud-config
       user: rhel
       password: ansible123!
-      chpasswd: { expire: False }  
+      chpasswd: { expire: False }
+      ssh_pwauth: true
       runcmd:
         - echo "PasswordAuthentication yes" > /etc/ssh/sshd_config.d/50-cloud-init.conf
         - systemctl reload sshd
-
-# # Project Zero instance definitions.
-# # Sizing mirrors publishing-house/spec.yaml (author-editable).
-# containers: []
-# virtualmachines:
-#   - name: "aap"
-#     image: "rhel-9.5"
-#     memory: "32G"
-#     cores: 8
-#     image_size: "100G"
-#     tags:
-#       - key: "AnsibleGroup"
-#         value: "aap"
-#       - key: "Role"
-#         value: "aap"
-#     networks:
-#       - default
-#   - name: "floci"
-#     image: "rhel-9.5"
-#     memory: "16G"
-#     cores: 4
-#     image_size: "50G"
-#     tags:
-#       - key: "AnsibleGroup"
-#         value: "floci"
-#       - key: "Role"
-#         value: "floci"
-#     networks:
-#       - default
