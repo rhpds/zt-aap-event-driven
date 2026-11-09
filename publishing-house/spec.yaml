@@ -14,7 +14,7 @@ project:
   showroom_type: "zero_touch"
   intake_type: "new"
   automation_type: "ansible"
-  description: "New to Event-Driven Ansible? Start with the core model—sources, conditions, and actions—then take it further than \"alert runs a job.\" In this Zero-Touch lab on Ansible Automation Platform 2.6, you create one rulebook and harden it step by step: run it as an activation, secure intake with Event Streams, add environment and severity guardrails plus throttling, then remediate, verify, and escalate when verification fails—using Rule Audit to explain every decision. Events are Alertmanager-style HTTP alerts via a lab injector."
+  description: "New to Event-Driven Ansible? In this ~2 hour Zero-Touch lab on Ansible Automation Platform 2.6, you create one rulebook and harden it: activation, Event Streams, and environment/severity guardrails—then remediate and verify a real cloud misconfiguration against Floci (AWS emulator). Pick one track—S3 public exposure, open security group, or runaway instance—and follow that path end to end while instructions for all three are available. Rule Audit shows why the platform skipped or acted."
   # content_reviewer_email and infra_reviewer_email are assigned by the RHDP team — not set by the author
   jira_ticket: "RHDPCD-2239"
   workflow_id: "f23b8332-c793-4d7d-9314-0a89bdc95409"
@@ -27,30 +27,24 @@ spec:
     - "Monitor matching events and actions in Rule Audit"
     - "Secure inbound events with Event Streams and verify that invalid credentials are rejected"
     - "Implement environment and severity conditions that skip noisy or out-of-scope alerts"
-    - "Configure throttling so alert storms do not create uncontrolled job runs"
-    - "Automate a remediate-then-verify response path from a matching alert"
-    - "Verify that a failed verification triggers an escalation action"
-    - "Analyze Rule Audit entries to explain skip, remediate, and escalate decisions"
+    - "Automate a remediate-then-verify response against Floci for the chosen cloud misconfiguration track"
+    - "Analyze Rule Audit entries to explain skip versus remediate decisions"
   modules:
     - id: module-01
-      title: "What EDA is (and isn't)"
-      duration_min: 25
+      title: "Pick your track + first match and activation"
+      duration_min: 35
       status: not_started
     - id: module-02
-      title: "Your first rulebook activation"
-      duration_min: 30
+      title: "Event Streams: safe intake"
+      duration_min: 25
       status: not_started
     - id: module-03
-      title: "Event Streams: safe intake"
-      duration_min: 30
+      title: "Guardrails: when not to act"
+      duration_min: 25
       status: not_started
     - id: module-04
-      title: "Guardrails: when not to act"
-      duration_min: 30
-      status: not_started
-    - id: module-05
-      title: "Verified outcome"
-      duration_min: 40
+      title: "Verified outcome on your Floci track"
+      duration_min: 35
       status: not_started
   environment:
     platform: ""               # ocp | rhel-vms — determines which sizing fields apply
@@ -84,7 +78,7 @@ spec:
     external_services: []              # named external service dependencies e.g. [github.com]
     gpu_nodes: 0                       # number of GPU nodes (0 = none)
     gpu_type: ""                       # e.g. NVIDIA A100 40GB (required if gpu_nodes > 0)
-  duration_hours: 3.5
+  duration_hours: 2
   audience: "beginner"               # beginner | intermediate | advanced
 
 development:
@@ -109,20 +103,18 @@ approval_checklist:
 
   content:
     prerequisites_verifiable: true
-    assessment_strategy: "Zero-Touch solve/validate against activation state, job counts under throttle, remediate/verify/escalate outcomes, and Rule Audit trails for skip vs act paths."
+    assessment_strategy: "Zero-Touch solve/validate for the chosen track: activation match, Event Stream auth, env/severity skips, Floci remediate+verify, and Rule Audit literacy."
     catalog_gap: ""
-    design_overview: "Introductory Zero-Touch EDA lab on AAP 2.6 where learners create one rulebook and harden it through Event Streams, guardrails, throttling, and closed-loop verify/escalate, using Alertmanager-style alerts and Rule Audit as evidence."
+    design_overview: "Two-hour Zero-Touch intro to EDA on AAP 2.6: one evolving rulebook through Event Streams and guardrails, then choose-your-track Floci cloud remediation (S3, SG, or runaway instance) with verified outcome and Rule Audit."
     module_summaries:
-      - title: "What EDA is (and isn't)"
-        overview: "Build a first rulebook (source, condition, action) against an alert-shaped webhook and contrast event-driven action with running the same Job Template manually."
-      - title: "Your first rulebook activation"
-        overview: "Deploy the rulebook as an AAP 2.6 activation, keep it listening, and find matches in Rule Audit."
+      - title: "Pick your track + first match and activation"
+        overview: "Choose S3, security group, or runaway-instance track; build first rulebook match and run it as an activation with Rule Audit."
       - title: "Event Streams: safe intake"
-        overview: "Move intake to Event Streams; prove bad tokens fail and valid tokens still match the same rulebook."
+        overview: "Secure intake with Event Streams; prove bad tokens fail and valid tokens still match."
       - title: "Guardrails: when not to act"
-        overview: "Add environment/severity conditions and throttling; inject noise and storms; confirm skips and capped job counts."
-      - title: "Verified outcome"
-        overview: "Extend the rulebook for remediate → verify → escalate, then explain skip/remediate/escalate decisions in Rule Audit."
+        overview: "Add environment/severity conditions; inject noise for the chosen track; confirm skips."
+      - title: "Verified outcome on your Floci track"
+        overview: "Remediate and verify the chosen Floci misconfiguration; explain skip vs remediate in Rule Audit."
     rcars_overlap_pct: null
     rcars_top_matches: []
     rejections: []

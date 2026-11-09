@@ -2,7 +2,7 @@
 
 **Event-Driven Ansible: From Event to Verified Outcome**
 
-New to Event-Driven Ansible? Start with the core model—sources, conditions, and actions—then take it further than "alert runs a job." In this Zero-Touch lab on Ansible Automation Platform 2.6, you create one rulebook and harden it step by step: run it as an activation, secure intake with Event Streams, add environment and severity guardrails plus throttling, then remediate, verify, and escalate when verification fails—using Rule Audit to explain every decision. Events are Alertmanager-style HTTP alerts via a lab injector.
+New to Event-Driven Ansible? In this ~2 hour Zero-Touch lab on Ansible Automation Platform 2.6, you create one rulebook and harden it: activation, Event Streams, and environment/severity guardrails—then remediate and verify a cloud misconfiguration against Floci (AWS emulator). Pick one track—S3 public exposure, open security group, or runaway instance—and follow that path end to end. Rule Audit shows why the platform skipped or acted.
 
 **Owner:** nmartins0611  
 **Jira:** [RHDPCD-2239](https://redhat.atlassian.net/browse/RHDPCD-2239)
