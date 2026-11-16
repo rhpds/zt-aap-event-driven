@@ -23,6 +23,6 @@ tabs:
   - name: Event-Driven Ansible
     url: "{aap-eda-url}"
   - name: Floci UI
-    url: "{floci-ui-url}"
+    url: https://floci-ui-${guid}.${domain}/
   - name: Gitea
     url: "{gitea-url}"

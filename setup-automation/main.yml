@@ -12,7 +12,6 @@
   vars:
     eda_lab_root: /usr/local/share/eda-lab
     student_eda_lab: "{{ lookup('env', 'HOME') }}/eda-lab"
-    floci_endpoint: "{{ lookup('env', 'FLOCI_ENDPOINT') | default('http://127.0.0.1:4566', true) }}"
   tasks:
     - name: Check whether /usr/local/share is writable
       ansible.builtin.stat:
@@ -84,52 +83,30 @@
         state: link
         force: true
 
-    - name: Ensure Floci container is running (Podman)
-      ansible.builtin.command:
-        argv:
-          - podman
-          - ps
-          - --filter
-          - name=floci
-          - --format
-          - "{{ '{{.Names}}' }}"
-      register: floci_ps
-      changed_when: false
-      failed_when: false
-
-    - name: Start Floci if missing
-      ansible.builtin.shell: |
-        set -euo pipefail
-        podman network exists floci-net || podman network create floci-net
-        podman rm -f floci >/dev/null 2>&1 || true
-        podman run -d --name floci --network floci-net -p 4566:4566 docker.io/floci/floci:latest
-      when: floci_ps.stdout | trim | length == 0
-      failed_when: false
-
-    - name: Wait for Floci health endpoint
-      ansible.builtin.uri:
-        url: "{{ floci_endpoint }}/_localstack/health"
-        status_code: [200, 404]
-      register: floci_health
-      retries: 15
-      delay: 2
-      until: floci_health.status is defined
-      failed_when: false
-
-    - name: Seed Floci demo resources
-      ansible.builtin.command:
-        argv:
-          - ansible-playbook
-          - "{{ playbook_dir }}/../automation/ansible/playbooks/seed_floci.yml"
-          - -e
-          - "floci_endpoint={{ floci_endpoint }}"
-      environment:
-        ANSIBLE_ROLES_PATH: "{{ playbook_dir }}/../automation/ansible/roles"
-        FLOCI_ENDPOINT: "{{ floci_endpoint }}"
-      failed_when: false
+    - name: Add the floci VM when bastion credentials are present
+      ansible.builtin.add_host:
+        name: floci
+        ansible_host: floci
+        ansible_port: "{{ lookup('env', 'BASTION_PORT') }}"
+        ansible_user: "{{ lookup('env', 'BASTION_USER') }}"
+        ansible_password: "{{ lookup('env', 'BASTION_PASSWORD') }}"
+        ansible_become_password: "{{ lookup('env', 'BASTION_PASSWORD') }}"
+      when:
+        - lookup('env', 'BASTION_USER') | length > 0
+        - lookup('env', 'BASTION_PASSWORD') | length > 0
+        - lookup('env', 'BASTION_PORT') | length > 0
+      no_log: true
 
     - name: Setup summary
       ansible.builtin.debug:
         msg: >-
-          Lab materials synced. Floci endpoint {{ floci_endpoint }}.
-          Configure AAP projects/JTs/activations in staging automation (Controller API).
+          Lab materials synced under {{ student_eda_lab }}.
+          Floci UI route is https://floci-ui-<guid>.<domain>/ on VM port 4500.
+
+- name: Start Floci API and UI
+  hosts: floci
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Install and start Floci and the console
+      ansible.builtin.script: start-floci.sh

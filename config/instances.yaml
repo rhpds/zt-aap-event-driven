@@ -201,3 +201,6 @@ virtualmachines:
       runcmd:
         - echo "PasswordAuthentication yes" > /etc/ssh/sshd_config.d/50-cloud-init.conf
         - systemctl reload sshd
+        - curl -fsSL -o /usr/local/sbin/start-floci.sh https://raw.githubusercontent.com/rhpds/zt-aap-event-driven/main/setup-automation/start-floci.sh
+        - chmod 0755 /usr/local/sbin/start-floci.sh
+        - /usr/local/sbin/start-floci.sh
