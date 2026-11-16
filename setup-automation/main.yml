@@ -1,8 +1,9 @@
 ---
 # SETUP — Environment Setup (Zero-Touch)
 # Project Zero runs this file: setup-automation/main.yml
-# Prepares Floci host materials and documents AAP object expectations.
-# Full AAP Controller/EDA object creation is completed when staging CI is available.
+# The platform runner is unprivileged (cannot create /usr/local/share).
+# Student materials always land under $HOME/eda-lab.
+# The system share is used only when /usr/local/share is writable.
 
 - name: Environment Setup
   hosts: localhost
@@ -13,7 +14,22 @@
     student_eda_lab: "{{ lookup('env', 'HOME') }}/eda-lab"
     floci_endpoint: "{{ lookup('env', 'FLOCI_ENDPOINT') | default('http://127.0.0.1:4566', true) }}"
   tasks:
-    - name: Ensure lab material directories exist
+    - name: Check whether /usr/local/share is writable
+      ansible.builtin.stat:
+        path: /usr/local/share
+      register: system_share
+
+    - name: Ensure student lab directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ student_eda_lab }}/rulebooks"
+        - "{{ student_eda_lab }}/bin"
+        - "{{ student_eda_lab }}/materials"
+
+    - name: Ensure system lab directories exist
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
@@ -22,29 +38,37 @@
         - "{{ eda_lab_root }}/rulebooks"
         - "{{ eda_lab_root }}/bin"
         - "{{ eda_lab_root }}/playbooks"
-        - "{{ student_eda_lab }}/rulebooks"
-        - "{{ student_eda_lab }}/bin"
-        - "{{ student_eda_lab }}/materials"
+      when: system_share.stat.exists and system_share.stat.writeable
 
-    - name: Sync lab-materials into share and student home
+    - name: Sync lab materials into the student home
       ansible.builtin.copy:
         src: "{{ playbook_dir }}/../lab-materials/"
-        dest: "{{ item }}"
+        dest: "{{ student_eda_lab }}/materials/"
         mode: preserve
-      loop:
-        - "{{ eda_lab_root }}/"
-        - "{{ student_eda_lab }}/materials/"
 
-    - name: Install injector scripts as executable
+    - name: Sync lab materials into the system share
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../lab-materials/"
+        dest: "{{ eda_lab_root }}/"
+        mode: preserve
+      when: system_share.stat.exists and system_share.stat.writeable
+
+    - name: Install student injector scripts as executable
+      ansible.builtin.file:
+        path: "{{ item }}"
+        mode: "0755"
+      loop:
+        - "{{ student_eda_lab }}/materials/bin/inject-alert.sh"
+        - "{{ student_eda_lab }}/materials/bin/reset-track.sh"
+
+    - name: Install system injector scripts as executable
       ansible.builtin.file:
         path: "{{ item }}"
         mode: "0755"
       loop:
         - "{{ eda_lab_root }}/bin/inject-alert.sh"
         - "{{ eda_lab_root }}/bin/reset-track.sh"
-        - "{{ student_eda_lab }}/materials/bin/inject-alert.sh"
-        - "{{ student_eda_lab }}/materials/bin/reset-track.sh"
-      failed_when: false
+      when: system_share.stat.exists and system_share.stat.writeable
 
     - name: Link injector into student bin
       ansible.builtin.file:
@@ -52,7 +76,6 @@
         dest: "{{ student_eda_lab }}/bin/inject-alert.sh"
         state: link
         force: true
-      failed_when: false
 
     - name: Link reset script into student bin
       ansible.builtin.file:
@@ -60,7 +83,6 @@
         dest: "{{ student_eda_lab }}/bin/reset-track.sh"
         state: link
         force: true
-      failed_when: false
 
     - name: Ensure Floci container is running (Podman)
       ansible.builtin.command:
