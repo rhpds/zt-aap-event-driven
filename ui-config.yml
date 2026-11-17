@@ -16,13 +16,13 @@ antora:
 
 tabs:
   - name: ">_ terminal"
-    path: /wetty
-    port: 443
+    url: /wetty_control
   - name: AAP
-    url: https://control-${guid}.${domain}/
+    url: https://control-${GUID}.${DOMAIN}/
+    external: false
   - name: Floci UI
-    url: https://floci-ui-${guid}.${domain}/
+    url: https://floci-ui-${GUID}.${DOMAIN}/
     external: true
   - name: Gitea
-    url: https://gitea-${guid}.${domain}/
+    url: https://gitea-${GUID}.${DOMAIN}/
     external: true

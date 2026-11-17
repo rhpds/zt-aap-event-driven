@@ -8,12 +8,13 @@ asciidoc:
   attributes:
     experimental: true
     page-pagination: true
-    guid: '%GUID%'
+    guid: guid
+    domain: apps.example.com
     lab-title: Event-Driven Ansible — From Event to Verified Outcome
-    aap-web-url: '%AAP_WEB_URL%'
-    aap-eda-url: '%AAP_EDA_URL%'
-    floci-endpoint: https://floci-%GUID%.%DOMAIN%
-    floci-host: floci-%GUID%.%DOMAIN%
-    floci-ui-url: https://floci-ui-%GUID%.%DOMAIN%
-    gitea-url: '%GITEA_URL%'
-    student-user: '%USER%'
+    aap-web-url: https://control-{guid}.{domain}/
+    aap-eda-url: https://eda-{guid}.{domain}/
+    floci-endpoint: https://floci-{guid}.{domain}
+    floci-host: floci-{guid}.{domain}
+    floci-ui-url: https://floci-ui-{guid}.{domain}/
+    gitea-url: https://gitea-{guid}.{domain}/
+    student-user: rhel
