@@ -71,7 +71,7 @@ Each module has *Validate*. Checks use your track marker from Module 1
 
 == Before you start
 
-. Open the *AAP Controller* and *Event-Driven Ansible* tabs
+. Open the *AAP* tab
 . Confirm you can sign in
 . Open the *terminal* tab for injector commands
 

@@ -18,10 +18,8 @@ tabs:
   - name: ">_ terminal"
     path: /wetty
     port: 443
-  - name: AAP Controller
-    url: "{aap-web-url}"
-  - name: Event-Driven Ansible
-    url: "{aap-eda-url}"
+  - name: AAP
+    url: https://control-${guid}.${domain}/
   - name: Floci UI
     url: https://floci-ui-${guid}.${domain}/
   - name: Gitea
