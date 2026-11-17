@@ -1,6 +1,18 @@
 ---
 # Project Zero firewall rules.
 # By default egress traffic is not allowed; define allowed ports below.
+ingress:
+  - ports:
+      # ── General ──
+      - protocol: TCP
+        port: 443   # SSH (central host)
+      - protocol: TCP
+        port: 4500  # HTTP (IdM web UI)
+      - protocol: TCP
+        port: 4655  # HTTPS (IdM web UI, AAP)
+      - protocol: TCP
+        port: 3000
+
 egress:
   - ports:
       - protocol: TCP
@@ -11,4 +23,3 @@ egress:
         port: 4566
       - protocol: TCP
         port: 3000
-        
