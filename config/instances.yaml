@@ -94,9 +94,9 @@ containers:
         tls_termination: Edge
 
   - name: floci-ui
-    image: floci/floci-ui:0.7.0
+    image: quay.io/nmartins/zt-aap-floci-ui:0.7.0
     ports:
-      - name: ui
+      - name: floci-ui
         containerPort: 4500
         protocol: TCP
     environment:
@@ -113,7 +113,7 @@ containers:
           - port: 4500
             protocol: TCP
             targetPort: 4500
-            name: ui
+            name: floci-ui
     routes:
       - name: floci-ui
         host: floci-ui
