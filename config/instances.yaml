@@ -66,28 +66,17 @@ containers:
         tls_termination: Edge
 
   - name: floci
-    image: floci/floci:2.5.0-compat
+    image: quay.io/nmartins/zt-aap-floci:latest
     ports:
       - name: api
         containerPort: 4566
         protocol: TCP
     environment:
       FLOCI_SECURITY_ALLOW_UNSAFE_NETWORK_EXPOSURE: "true"
+      FLOCI_STORAGE_MODE: persistent
+      FLOCI_STORAGE_SERVICES_S3_MODE: persistent
+      FLOCI_STORAGE_SERVICES_EC2_MODE: persistent
       FLOCI_STORAGE_PERSISTENT_PATH: /app/data
-    volumeMounts:
-      - name: floci-data
-        mountPath: /app/data
-    volumes:
-      - name: floci-data
-        emptyDir: {}
-    commands:
-      - >-
-        sh -c 'for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
-        aws s3 mb s3://eda-lab-public && exit 0;
-        aws s3api head-bucket --bucket eda-lab-public && exit 0;
-        sleep 2; done; exit 1'
-      - aws ec2 create-security-group --group-name eda-lab-open --description "Intentionally open SG for EDA lab" || true
-      - aws ec2 authorize-security-group-ingress --group-name eda-lab-open --protocol tcp --port 22 --cidr 0.0.0.0/0 || true
     memory: 2Gi
     services:
       - name: floci

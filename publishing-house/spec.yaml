@@ -85,6 +85,7 @@ spec:
     non_ga_access_plan: ""             # how access is provided for non-GA products
     external_services:
       - registry.redhat.io
+      - quay.io
       - docker.io
       - github.com
     gpu_nodes: 0                       # number of GPU nodes (0 = none)

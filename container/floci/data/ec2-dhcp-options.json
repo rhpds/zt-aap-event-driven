@@ -1,0 +1,17 @@
+{
+  "000000000000/us-east-1::dopt-default" : {
+    "dhcpOptionsId" : "dopt-default",
+    "ownerId" : "000000000000",
+    "region" : "us-east-1",
+    "configurations" : [ {
+      "key" : "domain-name",
+      "values" : [ "ec2.internal" ]
+    }, {
+      "key" : "domain-name-servers",
+      "values" : [ "AmazonProvidedDNS" ]
+    }, {
+      "key" : "ipv6-address-preferred-lease-time",
+      "values" : [ "140" ]
+    } ]
+  }
+}

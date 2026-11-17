@@ -1,0 +1,47 @@
+{
+  "000000000000/us-east-1::sgr-228f6d2c571c628ad" : {
+    "securityGroupRuleId" : "sgr-228f6d2c571c628ad",
+    "groupId" : "sg-dff37f6dddd75bf69",
+    "groupOwnerId" : "000000000000",
+    "ipProtocol" : "tcp",
+    "fromPort" : 22,
+    "toPort" : 22,
+    "cidrIpv4" : "0.0.0.0/0",
+    "cidrIpv6" : null,
+    "prefixListId" : null,
+    "referencedGroupInfo" : null,
+    "description" : null,
+    "tags" : [ ],
+    "egress" : false
+  },
+  "000000000000/us-east-1::sgr-a26fd587a83f428f8" : {
+    "securityGroupRuleId" : "sgr-a26fd587a83f428f8",
+    "groupId" : "sg-default-us-east-1",
+    "groupOwnerId" : "000000000000",
+    "ipProtocol" : "-1",
+    "fromPort" : null,
+    "toPort" : null,
+    "cidrIpv4" : "0.0.0.0/0",
+    "cidrIpv6" : null,
+    "prefixListId" : null,
+    "referencedGroupInfo" : null,
+    "description" : null,
+    "tags" : [ ],
+    "egress" : true
+  },
+  "000000000000/us-east-1::sgr-728e3e2d08e615ae6" : {
+    "securityGroupRuleId" : "sgr-728e3e2d08e615ae6",
+    "groupId" : "sg-dff37f6dddd75bf69",
+    "groupOwnerId" : "000000000000",
+    "ipProtocol" : "-1",
+    "fromPort" : null,
+    "toPort" : null,
+    "cidrIpv4" : "0.0.0.0/0",
+    "cidrIpv6" : null,
+    "prefixListId" : null,
+    "referencedGroupInfo" : null,
+    "description" : null,
+    "tags" : [ ],
+    "egress" : true
+  }
+}
