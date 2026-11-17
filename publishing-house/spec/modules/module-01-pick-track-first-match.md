@@ -46,5 +46,5 @@ Learners choose one cloud misconfiguration track (S3, security group, or runaway
 ### Infrastructure Notes
 
 - AAP 2.6 with Controller + EDA; pre-created remediate JTs per track
-- Floci host reachable from AAP execution nodes; all three seeds present
-- Alert injector available on Floci host (or documented from AAP)
+- Floci API route reachable from AAP execution nodes on TCP 443; bucket and security group are seeded by the container
+- Alert injector available in the student terminal

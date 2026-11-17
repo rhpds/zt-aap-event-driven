@@ -37,7 +37,7 @@ Lab (hands-on)
 
 - Red Hat Ansible Automation Platform 2.6 (Automation Controller and Event-Driven Ansible)
 - Event Streams (authenticated event intake)
-- Floci (AWS emulator on localhost-style endpoint :4566) as the cloud remediation sandbox
+- Floci (AWS emulator container; learners and AAP use `https://floci-<guid>.<domain>`) as the cloud remediation sandbox
 - Alertmanager-compatible HTTP alerts via lab event injector
 - amazon.aws collection (Job Templates targeting Floci)
 
@@ -74,15 +74,16 @@ Beginner (introduces EDA; finishes with intermediate guardrail and verify patter
 ## Infrastructure Requirements
 
 - **Cloud provider:** CNV
-- **Platform:** RHEL VMs (no OpenShift cluster required for the lab products)
+- **Platform:** RHEL VM for AAP. Floci and Gitea run as containers on the lab cluster.
 - **Topology:** Per-student
 - **Sizing (matches `config/instances.yaml`):**
   - 1× `control` — AAP 2.6 CEH image — 8 vCPU, 64 GB RAM, 80 Gi disk (Controller :443, EDA UI :8443, webhook :5000)
-  - 1× `floci` — RHEL 9.5 — 4 vCPU, 16 GB RAM, 50 Gi disk (Floci API :4566, Floci UI :4500)
+  - Floci API container — `floci/floci:2.5.0-compat`, 2 Gi, route `https://floci-<guid>.<domain>` (port 4566)
+  - Floci UI container — `floci/floci-ui:0.7.0`, 1 Gi, route `https://floci-ui-<guid>.<domain>` (port 4500)
   - Gitea container — 4 Gi (lab SCM; migrates `rhpds/zt-aap-event-driven`)
 - **Automation approach:** Ansible
 - **AI/MaaS:** None
-- **External services:** registry.redhat.io (AAP/EE images); quay.io (Floci image pull — confirm exact image host at staging); github.com (content/automation SCM as needed)
+- **External services:** registry.redhat.io (AAP/EE images); docker.io (Floci and Gitea images); github.com (content/automation SCM as needed)
 - **AAP version:** 2.6
 - **Non-GA products:** None (all Red Hat products are GA; Floci is an open-source AWS emulator used as lab tooling)
 

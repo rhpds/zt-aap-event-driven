@@ -50,8 +50,8 @@ TIP: If you are unsure, choose *Track A — S3*. It is the simplest Floci path.
 | Ansible Automation Platform 2.6
 | Controller + Event-Driven Ansible (activations, Event Streams, Job Templates)
 
-| Floci host
-| AWS emulator on `{floci-endpoint}` — all three misconfigurations are pre-seeded
+| Floci
+| AWS emulator at `{floci-endpoint}` — the API and console run as containers, and all three misconfigurations are pre-seeded
 
 | Terminal
 | Alert injector scripts and rulebook files under `~/eda-lab/`

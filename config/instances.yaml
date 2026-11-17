@@ -65,6 +65,74 @@ containers:
         tls: true
         tls_termination: Edge
 
+  - name: floci
+    image: floci/floci:2.5.0-compat
+    ports:
+      - name: api
+        containerPort: 4566
+        protocol: TCP
+    environment:
+      FLOCI_SECURITY_ALLOW_UNSAFE_NETWORK_EXPOSURE: "true"
+      FLOCI_STORAGE_PERSISTENT_PATH: /app/data
+    volumeMounts:
+      - name: floci-data
+        mountPath: /app/data
+    volumes:
+      - name: floci-data
+        emptyDir: {}
+    commands:
+      - >-
+        sh -c 'for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
+        aws s3 mb s3://eda-lab-public && exit 0;
+        aws s3api head-bucket --bucket eda-lab-public && exit 0;
+        sleep 2; done; exit 1'
+      - aws ec2 create-security-group --group-name eda-lab-open --description "Intentionally open SG for EDA lab" || true
+      - aws ec2 authorize-security-group-ingress --group-name eda-lab-open --protocol tcp --port 22 --cidr 0.0.0.0/0 || true
+    memory: 2Gi
+    services:
+      - name: floci
+        ports:
+          - port: 4566
+            protocol: TCP
+            targetPort: 4566
+            name: api
+    routes:
+      - name: floci
+        host: floci
+        service: floci
+        targetPort: 4566
+        tls: true
+        tls_termination: Edge
+
+  - name: floci-ui
+    image: floci/floci-ui:0.7.0
+    ports:
+      - name: ui
+        containerPort: 4500
+        protocol: TCP
+    environment:
+      FLOCI_ENDPOINT: http://floci:4566
+      AWS_ENDPOINT_URL: http://floci:4566
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      PORT: "4500"
+    memory: 1Gi
+    services:
+      - name: floci-ui
+        ports:
+          - port: 4500
+            protocol: TCP
+            targetPort: 4500
+            name: ui
+    routes:
+      - name: floci-ui
+        host: floci-ui
+        service: floci-ui
+        targetPort: 4500
+        tls: true
+        tls_termination: Edge
+
 virtualmachines:
   - name: control
     image: aap-2.6-2-ceh-20251103
@@ -152,55 +220,3 @@ virtualmachines:
         targetPort: 8443
         tls: true
         tls_termination: Edge
-
-  - name: floci
-    image: rhel-9.5
-    memory: 16G
-    cores: 4
-    image_size: 50Gi
-    tags:
-      - key: AnsibleGroup
-        value: isolated
-      - key: Role
-        value: floci
-    networks:
-      - default
-      - secondary
-    services:
-      - name: floci-api
-        ports:
-          - port: 4566
-            protocol: TCP
-            targetPort: 4566
-            name: floci-api
-      - name: floci-ui
-        ports:
-          - port: 4500
-            protocol: TCP
-            targetPort: 4500
-            name: floci-ui
-    routes:
-      - name: floci-api
-        host: floci
-        service: floci-api
-        targetPort: 4566
-        tls: true
-        tls_termination: Edge
-      - name: floci-ui
-        host: floci-ui
-        service: floci-ui
-        targetPort: 4500
-        tls: true
-        tls_termination: Edge
-    userdata: |-
-      #cloud-config
-      user: rhel
-      password: ansible123!
-      chpasswd: { expire: False }
-      ssh_pwauth: true
-      runcmd:
-        - echo "PasswordAuthentication yes" > /etc/ssh/sshd_config.d/50-cloud-init.conf
-        - systemctl reload sshd
-        - curl -fsSL -o /usr/local/sbin/start-floci.sh https://raw.githubusercontent.com/rhpds/zt-aap-event-driven/main/setup-automation/start-floci.sh
-        - chmod 0755 /usr/local/sbin/start-floci.sh
-        - /usr/local/sbin/start-floci.sh

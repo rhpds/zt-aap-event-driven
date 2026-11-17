@@ -4,7 +4,7 @@
   connection: local
   gather_facts: false
   vars:
-    floci_endpoint: "{{ lookup('env', 'FLOCI_ENDPOINT') | default('http://127.0.0.1:4566', true) }}"
+    floci_endpoint: "{{ lookup('env', 'FLOCI_ENDPOINT') | default('https://floci-' ~ lookup('env', 'GUID') ~ '.' ~ lookup('env', 'DOMAIN'), true) }}"
     bucket: "eda-lab-public"
   tasks:
     - name: Enable Block Public Access

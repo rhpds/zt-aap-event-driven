@@ -46,5 +46,5 @@ Learners close the loop for their chosen cloud track: a matching alert remediate
 ### Infrastructure Notes
 
 - Floci must expose the APIs used by each track’s remediate/verify playbooks
-- AAP credentials use Floci endpoint (`:4566`); execution nodes must route to Floci VM
+- AAP credentials use the Floci route (`https://floci-<guid>.<domain>`); execution nodes reach it on TCP 443
 - Reset/seed automation restores all three resources between sessions

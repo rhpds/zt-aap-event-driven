@@ -83,30 +83,9 @@
         state: link
         force: true
 
-    - name: Add the floci VM when bastion credentials are present
-      ansible.builtin.add_host:
-        name: floci
-        ansible_host: floci
-        ansible_port: "{{ lookup('env', 'BASTION_PORT') }}"
-        ansible_user: "{{ lookup('env', 'BASTION_USER') }}"
-        ansible_password: "{{ lookup('env', 'BASTION_PASSWORD') }}"
-        ansible_become_password: "{{ lookup('env', 'BASTION_PASSWORD') }}"
-      when:
-        - lookup('env', 'BASTION_USER') | length > 0
-        - lookup('env', 'BASTION_PASSWORD') | length > 0
-        - lookup('env', 'BASTION_PORT') | length > 0
-      no_log: true
-
     - name: Setup summary
       ansible.builtin.debug:
         msg: >-
           Lab materials synced under {{ student_eda_lab }}.
-          Floci UI route is https://floci-ui-<guid>.<domain>/ on VM port 4500.
-
-- name: Start Floci API and UI
-  hosts: floci
-  gather_facts: false
-  become: true
-  tasks:
-    - name: Install and start Floci and the console
-      ansible.builtin.script: start-floci.sh
+          Floci API route is https://floci-{{ lookup('env', 'GUID') }}.{{ lookup('env', 'DOMAIN') }}/.
+          Floci UI route is https://floci-ui-{{ lookup('env', 'GUID') }}.{{ lookup('env', 'DOMAIN') }}/.

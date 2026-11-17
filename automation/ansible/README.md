@@ -7,4 +7,4 @@ Playbooks and roles for the Zero-Touch EDA lab:
 - `playbooks/reset_track.yml` — restore a single track to the bad state
 - `roles/floci_seed` — shared seed tasks
 
-Point AWS modules at Floci with `endpoint_url` (default `http://127.0.0.1:4566`).
+Point AWS modules at Floci with `endpoint_url`. The default is `https://floci-$GUID.$DOMAIN`. Set `FLOCI_ENDPOINT` to override it.
