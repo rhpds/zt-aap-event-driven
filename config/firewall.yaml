@@ -9,6 +9,8 @@ ingress:
       - protocol: TCP
         port: 4500  # HTTP (IdM web UI)
       - protocol: TCP
+        port: 4566  # Floci API
+      - protocol: TCP
         port: 4655  # HTTPS (IdM web UI, AAP)
       - protocol: TCP
         port: 3000
