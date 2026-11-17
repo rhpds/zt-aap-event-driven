@@ -25,4 +25,5 @@ tabs:
   - name: Floci UI
     url: https://floci-ui-${guid}.${domain}/
   - name: Gitea
-    url: "{gitea-url}"
+    url: https://gitea-${guid}.${domain}/
+    external: true
