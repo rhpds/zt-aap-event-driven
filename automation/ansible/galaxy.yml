@@ -5,10 +5,10 @@ version: "1.0.0"
 readme: README.md
 authors:
   - "RHDP Publishing House <nmartins@redhat.com>"
-description: "EDA lab automation — Floci seed/reset and cloud remediate/verify playbooks."
+description: "Placeholder — exercise playbooks live in ansible-tmm/event-driven-aap-workshop."
 license:
   - GPL-3.0-or-later
-repository: "https://github.com/rhpds/zt-aap-event-driven"
+repository: "https://github.com/ansible-tmm/event-driven-aap-workshop"
 tags:
   - eda
   - floci

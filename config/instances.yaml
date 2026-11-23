@@ -49,8 +49,9 @@ containers:
       - >
         curl -X POST -H "accept: application/json" -H "Content-Type:
         application/json" -u 'gitea:ansible123!' -d '{"clone_addr":
-        "https://github.com/rhpds/zt-aap-event-driven.git", "repo_name":
-        "zt-aap-event-driven", "owner": "gitea", "private": false}'
+        "https://github.com/ansible-tmm/event-driven-aap-workshop.git",
+        "repo_name": "event-driven-aap-workshop", "owner": "gitea",
+        "private": false}'
         http://localhost:3000/api/v1/repos/migrate
     memory: 4Gi
     services:

@@ -3,6 +3,9 @@
   hosts: localhost
   connection: local
   gather_facts: false
+  vars:
+    student_materials: "{{ lookup('env', 'HOME') }}/eda-lab/materials"
+    system_materials: /usr/local/share/eda-lab
   tasks:
     - name: Default track to s3 if unset
       ansible.builtin.copy:
@@ -11,9 +14,30 @@
         mode: "0644"
       failed_when: false
 
+    - name: Locate starter rulebook on disk
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: starter_candidates
+      loop:
+        - "{{ student_materials }}/rulebooks/alert-response.starter.yml"
+        - "{{ system_materials }}/rulebooks/alert-response.starter.yml"
+
+    - name: Pick first existing starter rulebook
+      ansible.builtin.set_fact:
+        starter_rulebook: "{{ (starter_candidates.results | selectattr('stat.exists') | map(attribute='item') | list | first) | default('') }}"
+
+    - name: Require starter rulebook from exercise materials
+      ansible.builtin.assert:
+        that:
+          - starter_rulebook | length > 0
+        fail_msg: >-
+          Missing alert-response.starter.yml under {{ student_materials }}
+          or {{ system_materials }}. Re-run setup so control clones
+          ansible-tmm/event-driven-aap-workshop.
+
     - name: Install starter rulebook for S3 track
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/../../lab-materials/rulebooks/alert-response.starter.yml"
+        src: "{{ starter_rulebook }}"
         dest: "{{ lookup('env', 'HOME') }}/eda-lab/rulebooks/alert-response.yml"
         mode: "0644"
-        remote_src: false
+        remote_src: true

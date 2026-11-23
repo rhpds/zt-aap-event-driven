@@ -80,7 +80,7 @@ Beginner (introduces EDA; finishes with intermediate guardrail and verify patter
   - 1× `control` — AAP 2.6 CEH image — 8 vCPU, 64 GB RAM, 80 Gi disk (Controller :443, EDA UI :8443, webhook :5000)
   - Floci API container — `quay.io/nmartins/zt-aap-floci:latest`, 2 Gi, route `https://floci-<guid>.<domain>` (port 4566)
   - Floci UI container — `quay.io/nmartins/zt-aap-floci-ui:0.7.0`, 1 Gi, route `https://floci-ui-<guid>.<domain>` (port 4500)
-  - Gitea container — 4 Gi (lab SCM; migrates `rhpds/zt-aap-event-driven`)
+  - Gitea container — 4 Gi (lab SCM; migrates `ansible-tmm/event-driven-aap-workshop`)
 - **Automation approach:** Ansible
 - **AI/MaaS:** None
 - **External services:** registry.redhat.io (AAP/EE images); quay.io (seeded Floci API and UI images); docker.io (Gitea image); github.com (content/automation SCM as needed)

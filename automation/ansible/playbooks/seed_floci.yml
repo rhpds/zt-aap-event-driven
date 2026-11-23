@@ -1,9 +1,0 @@
----
-- name: Seed Floci lab resources
-  hosts: localhost
-  connection: local
-  gather_facts: false
-  vars:
-    floci_endpoint: "{{ lookup('env', 'FLOCI_ENDPOINT') | default('https://floci-' ~ lookup('env', 'GUID') ~ '.' ~ lookup('env', 'DOMAIN'), true) }}"
-  roles:
-    - role: floci_seed

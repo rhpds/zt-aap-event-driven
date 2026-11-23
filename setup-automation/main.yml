@@ -4,42 +4,14 @@
 # The platform runner is unprivileged and ephemeral. It must SSH into the
 # student control VM and install materials there (not into the runner $HOME).
 #
-# Requires the full workshop checkout on the runner so
-# {{ playbook_dir }}/../lab-materials/ is present (sibling of setup-automation/).
+# Exercise materials come from ansible-tmm/event-driven-aap-workshop (cloned
+# onto control). That GitHub repo must be publicly cloneable so both this
+# setup and the Gitea migrate in config/instances.yaml succeed without tokens.
 
-- name: Verify lab materials on runner and build inventory
+- name: Build inventory for control
   hosts: localhost
   gather_facts: false
-  vars:
-    lab_materials_src: "{{ playbook_dir }}/../lab-materials"
   tasks:
-    - name: Require starter rulebook in checkout
-      ansible.builtin.stat:
-        path: "{{ lab_materials_src }}/rulebooks/alert-response.starter.yml"
-      register: starter_src
-
-    - name: Require injector script in checkout
-      ansible.builtin.stat:
-        path: "{{ lab_materials_src }}/bin/inject-alert.sh"
-      register: injector_src
-
-    - name: Require reset playbook in checkout
-      ansible.builtin.stat:
-        path: "{{ lab_materials_src }}/playbooks/reset_track.yml"
-      register: reset_pb_src
-
-    - name: Fail early if lab-materials is missing from the runner checkout
-      ansible.builtin.assert:
-        that:
-          - starter_src.stat.exists
-          - injector_src.stat.exists
-          - reset_pb_src.stat.exists
-        fail_msg: >-
-          lab-materials/ is incomplete or missing next to setup-automation/
-          (expected rulebooks/alert-response.starter.yml, bin/inject-alert.sh,
-          playbooks/reset_track.yml). Project Zero must check out the full
-          workshop repo, not setup-automation alone.
-
     - name: Add control host
       ansible.builtin.add_host:
         name: control
@@ -58,11 +30,46 @@
     eda_lab_root: /usr/local/share/eda-lab
     student_user: rhel
     student_eda_lab: "/home/{{ student_user }}/eda-lab"
-    lab_materials_src: "{{ playbook_dir }}/../lab-materials"
+    exercise_repo_url: https://github.com/ansible-tmm/event-driven-aap-workshop.git
+    exercise_repo_version: main
+    exercise_clone_dir: /var/tmp/event-driven-aap-workshop
   tasks:
     - name: Wait for SSH
       ansible.builtin.wait_for_connection:
         timeout: 300
+
+    - name: Ensure git is installed for exercise clone
+      ansible.builtin.package:
+        name: git
+        state: present
+
+    - name: Clone exercise materials onto control
+      ansible.builtin.git:
+        repo: "{{ exercise_repo_url }}"
+        dest: "{{ exercise_clone_dir }}"
+        version: "{{ exercise_repo_version }}"
+        force: true
+
+    - name: Fail early if exercise clone is incomplete
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: exercise_required
+      loop:
+        - "{{ exercise_clone_dir }}/rulebooks/alert-response.starter.yml"
+        - "{{ exercise_clone_dir }}/bin/inject-alert.sh"
+        - "{{ exercise_clone_dir }}/playbooks/reset_track.yml"
+
+    - name: Assert exercise materials exist in clone
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+        fail_msg: >-
+          Exercise clone at {{ exercise_clone_dir }} is missing {{ item.item }}.
+          Confirm {{ exercise_repo_url }} is publicly cloneable (Gitea migrate
+          needs the same).
+      loop: "{{ exercise_required.results }}"
+      loop_control:
+        label: "{{ item.item }}"
 
     - name: Ensure system lab directories exist
       ansible.builtin.file:
@@ -73,6 +80,7 @@
         - "{{ eda_lab_root }}/rulebooks"
         - "{{ eda_lab_root }}/bin"
         - "{{ eda_lab_root }}/playbooks"
+        - "{{ eda_lab_root }}/roles"
 
     - name: Ensure student lab directories exist
       ansible.builtin.file:
@@ -86,19 +94,31 @@
         - "{{ student_eda_lab }}/bin"
         - "{{ student_eda_lab }}/materials"
 
-    - name: Sync lab materials into the system share
+    - name: Sync exercise materials into the system share
       ansible.builtin.copy:
-        src: "{{ lab_materials_src }}/"
-        dest: "{{ eda_lab_root }}/"
+        src: "{{ exercise_clone_dir }}/{{ item }}/"
+        dest: "{{ eda_lab_root }}/{{ item }}/"
+        remote_src: true
         mode: preserve
+      loop:
+        - rulebooks
+        - playbooks
+        - bin
+        - roles
 
-    - name: Sync lab materials into the student home
+    - name: Sync exercise materials into the student home
       ansible.builtin.copy:
-        src: "{{ lab_materials_src }}/"
-        dest: "{{ student_eda_lab }}/materials/"
+        src: "{{ exercise_clone_dir }}/{{ item }}/"
+        dest: "{{ student_eda_lab }}/materials/{{ item }}/"
+        remote_src: true
         owner: "{{ student_user }}"
         group: "{{ student_user }}"
         mode: preserve
+      loop:
+        - rulebooks
+        - playbooks
+        - bin
+        - roles
 
     - name: Install system injector scripts as executable
       ansible.builtin.file:
@@ -160,8 +180,8 @@
     - name: Setup summary
       ansible.builtin.debug:
         msg: >-
-          Lab materials installed on control under {{ eda_lab_root }} and
-          {{ student_eda_lab }}/materials/.
+          Lab materials cloned from {{ exercise_repo_url }} (@{{ exercise_repo_version }})
+          onto control under {{ eda_lab_root }} and {{ student_eda_lab }}/materials/.
           Starter: {{ eda_lab_root }}/rulebooks/alert-response.starter.yml
           (also {{ student_eda_lab }}/materials/rulebooks/alert-response.starter.yml).
           Floci API route is https://floci-{{ lookup('env', 'GUID') }}.{{ lookup('env', 'DOMAIN') }}/.

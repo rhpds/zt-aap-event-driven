@@ -1,10 +1,8 @@
-# eda_floci_lab collection
+# Exercise automation moved
 
-Playbooks and roles for the Zero-Touch EDA lab:
+Floci seed/remediate/verify/reset playbooks and the `floci_seed` role now live in:
 
-- `playbooks/seed_floci.yml` — seed S3 / SG / instance demo resources in Floci
-- `playbooks/remediate_*.yml` / `verify_*.yml` — Job Template bodies per track
-- `playbooks/reset_track.yml` — restore a single track to the bad state
-- `roles/floci_seed` — shared seed tasks
+https://github.com/ansible-tmm/event-driven-aap-workshop
 
-Point AWS modules at Floci with `endpoint_url`. The default is `https://floci-$GUID.$DOMAIN`. Set `FLOCI_ENDPOINT` to override it.
+That repository is what Gitea migrates and what `setup-automation` installs on
+control. Keep this directory only as a Publishing House / collection placeholder.

@@ -6,6 +6,8 @@
   vars:
     track_file: "{{ lookup('env', 'HOME') }}/eda-lab/track"
     floci_endpoint: "{{ lookup('env', 'FLOCI_ENDPOINT') | default('https://floci-' ~ lookup('env', 'GUID') ~ '.' ~ lookup('env', 'DOMAIN'), true) }}"
+    student_materials: "{{ lookup('env', 'HOME') }}/eda-lab/materials"
+    system_materials: /usr/local/share/eda-lab
   tasks:
     - name: Read track
       ansible.builtin.slurp:
@@ -17,11 +19,38 @@
       ansible.builtin.set_fact:
         track: "{{ (track_raw.content | b64decode | trim) if track_raw.content is defined else 's3' }}"
 
+    - name: Choose remediate playbook name for track
+      ansible.builtin.set_fact:
+        remediate_playbook_name: >-
+          {{ 'remediate_s3.yml' if track == 's3'
+             else ('remediate_sg.yml' if track == 'sg' else 'remediate_ec2.yml') }}
+
+    - name: Locate remediate playbook on disk
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: remediate_candidates
+      loop:
+        - "{{ student_materials }}/playbooks/{{ remediate_playbook_name }}"
+        - "{{ system_materials }}/playbooks/{{ remediate_playbook_name }}"
+
+    - name: Pick first existing remediate playbook
+      ansible.builtin.set_fact:
+        remediate_playbook: "{{ (remediate_candidates.results | selectattr('stat.exists') | map(attribute='item') | list | first) | default('') }}"
+
+    - name: Require remediate playbook from exercise materials
+      ansible.builtin.assert:
+        that:
+          - remediate_playbook | length > 0
+        fail_msg: >-
+          Missing {{ remediate_playbook_name }} under {{ student_materials }}
+          or {{ system_materials }}. Re-run setup so control clones
+          ansible-tmm/event-driven-aap-workshop.
+
     - name: Run remediate playbook for track
       ansible.builtin.command:
         argv:
           - ansible-playbook
-          - "{{ playbook_dir }}/../../automation/ansible/playbooks/{{ 'remediate_s3.yml' if track == 's3' else ('remediate_sg.yml' if track == 'sg' else 'remediate_ec2.yml') }}"
+          - "{{ remediate_playbook }}"
           - -e
           - "floci_endpoint={{ floci_endpoint }}"
       environment:
