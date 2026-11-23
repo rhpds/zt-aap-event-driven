@@ -40,12 +40,17 @@ Remember your choice. Validate reads `~/eda-lab/track`.
 
 [source,bash]
 ----
-cp /usr/local/share/eda-lab/rulebooks/alert-response.starter.yml \
+cp ~/eda-lab/materials/rulebooks/alert-response.starter.yml \
   ~/eda-lab/rulebooks/alert-response.yml
 ----
 
-If the share path is missing, copy from the lab materials directory shown by your instructor
-or from `~/eda-lab/materials/rulebooks/alert-response.starter.yml`.
+If that path is missing, use the system share copy instead:
+
+[source,bash]
+----
+cp /usr/local/share/eda-lab/rulebooks/alert-response.starter.yml \
+  ~/eda-lab/rulebooks/alert-response.yml
+----
 
 Open the file. You will set the condition `alertname` and the Job Template name for your track.
 

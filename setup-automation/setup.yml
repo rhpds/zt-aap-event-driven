@@ -1,3 +1,4 @@
 ---
 # Publishing House looks for setup.yml. Project Zero runs main.yml.
+# main.yml SSHs from the Project Zero runner into the control VM.
 - import_playbook: main.yml
