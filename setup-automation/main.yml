@@ -4,51 +4,26 @@
 # The platform runner is unprivileged and ephemeral. It must SSH into the
 # student control VM and install materials there (not into the runner $HOME).
 #
-# Exercise materials come from ansible-tmm/event-driven-aap-workshop (cloned
-# onto control). That GitHub repo must be publicly cloneable so both this
-# setup and the Gitea migrate in config/instances.yaml succeed without tokens.
+# Exercise materials come from ansible-tmm/event-driven-aap-workshop.
+# Clone on the setup runner (has git), then copy onto control — do not
+# `dnf install git` on the AAP image. That GitHub repo must be publicly
+# cloneable so both this setup and the Gitea migrate succeed without tokens.
 
-- name: Build inventory for control
+- name: Fetch exercise materials on runner and build inventory
   hosts: localhost
   gather_facts: false
-  tasks:
-    - name: Add control host
-      ansible.builtin.add_host:
-        name: control
-        ansible_ssh_host: "{{ lookup('ansible.builtin.env', 'BASTION_HOST') | default('control', true) }}"
-        ansible_ssh_port: "{{ lookup('ansible.builtin.env', 'BASTION_PORT') | default('22', true) }}"
-        ansible_ssh_user: "{{ lookup('ansible.builtin.env', 'BASTION_USER') }}"
-        ansible_ssh_pass: "{{ lookup('ansible.builtin.env', 'BASTION_PASSWORD') }}"
-        ansible_become_password: "{{ lookup('ansible.builtin.env', 'BASTION_PASSWORD') }}"
-        ansible_python_interpreter: /usr/libexec/platform-python
-
-- name: Install lab materials on control
-  hosts: control
-  gather_facts: false
-  become: true
   vars:
-    eda_lab_root: /usr/local/share/eda-lab
-    student_user: rhel
-    student_eda_lab: "/home/{{ student_user }}/eda-lab"
     exercise_repo_url: https://github.com/ansible-tmm/event-driven-aap-workshop.git
     exercise_repo_version: main
-    exercise_clone_dir: /var/tmp/event-driven-aap-workshop
+    exercise_clone_dir: /tmp/event-driven-aap-workshop
   tasks:
-    - name: Wait for SSH
-      ansible.builtin.wait_for_connection:
-        timeout: 300
-
-    - name: Ensure git is installed for exercise clone
-      ansible.builtin.package:
-        name: git
-        state: present
-
-    - name: Clone exercise materials onto control
+    - name: Clone exercise materials onto the setup runner
       ansible.builtin.git:
         repo: "{{ exercise_repo_url }}"
         dest: "{{ exercise_clone_dir }}"
         version: "{{ exercise_repo_version }}"
         force: true
+      register: exercise_clone
 
     - name: Fail early if exercise clone is incomplete
       ansible.builtin.stat:
@@ -64,12 +39,37 @@
         that:
           - item.stat.exists
         fail_msg: >-
-          Exercise clone at {{ exercise_clone_dir }} is missing {{ item.item }}.
-          Confirm {{ exercise_repo_url }} is publicly cloneable (Gitea migrate
-          needs the same).
+          Could not clone {{ exercise_repo_url }} (missing {{ item.item }}).
+          Make that repository public so setup and Gitea migrate can clone
+          anonymously, then re-provision or set FORCE_SETUP=true.
       loop: "{{ exercise_required.results }}"
       loop_control:
         label: "{{ item.item }}"
+
+    - name: Add control host
+      ansible.builtin.add_host:
+        name: control
+        ansible_ssh_host: "{{ lookup('ansible.builtin.env', 'BASTION_HOST') | default('control', true) }}"
+        ansible_ssh_port: "{{ lookup('ansible.builtin.env', 'BASTION_PORT') | default('22', true) }}"
+        ansible_ssh_user: "{{ lookup('ansible.builtin.env', 'BASTION_USER') }}"
+        ansible_ssh_pass: "{{ lookup('ansible.builtin.env', 'BASTION_PASSWORD') }}"
+        ansible_become_password: "{{ lookup('ansible.builtin.env', 'BASTION_PASSWORD') }}"
+        ansible_python_interpreter: /usr/libexec/platform-python
+        exercise_clone_dir: "{{ exercise_clone_dir }}"
+
+- name: Install lab materials on control
+  hosts: control
+  gather_facts: false
+  become: true
+  vars:
+    eda_lab_root: /usr/local/share/eda-lab
+    student_user: rhel
+    student_eda_lab: "/home/{{ student_user }}/eda-lab"
+    lab_materials_src: "{{ hostvars['control']['exercise_clone_dir'] | default('/tmp/event-driven-aap-workshop') }}"
+  tasks:
+    - name: Wait for SSH
+      ansible.builtin.wait_for_connection:
+        timeout: 300
 
     - name: Ensure system lab directories exist
       ansible.builtin.file:
@@ -96,9 +96,8 @@
 
     - name: Sync exercise materials into the system share
       ansible.builtin.copy:
-        src: "{{ exercise_clone_dir }}/{{ item }}/"
+        src: "{{ lab_materials_src }}/{{ item }}/"
         dest: "{{ eda_lab_root }}/{{ item }}/"
-        remote_src: true
         mode: preserve
       loop:
         - rulebooks
@@ -108,9 +107,8 @@
 
     - name: Sync exercise materials into the student home
       ansible.builtin.copy:
-        src: "{{ exercise_clone_dir }}/{{ item }}/"
+        src: "{{ lab_materials_src }}/{{ item }}/"
         dest: "{{ student_eda_lab }}/materials/{{ item }}/"
-        remote_src: true
         owner: "{{ student_user }}"
         group: "{{ student_user }}"
         mode: preserve
@@ -180,8 +178,8 @@
     - name: Setup summary
       ansible.builtin.debug:
         msg: >-
-          Lab materials cloned from {{ exercise_repo_url }} (@{{ exercise_repo_version }})
-          onto control under {{ eda_lab_root }} and {{ student_eda_lab }}/materials/.
+          Lab materials installed on control under {{ eda_lab_root }} and
+          {{ student_eda_lab }}/materials/ from ansible-tmm/event-driven-aap-workshop.
           Starter: {{ eda_lab_root }}/rulebooks/alert-response.starter.yml
           (also {{ student_eda_lab }}/materials/rulebooks/alert-response.starter.yml).
           Floci API route is https://floci-{{ lookup('env', 'GUID') }}.{{ lookup('env', 'DOMAIN') }}/.
