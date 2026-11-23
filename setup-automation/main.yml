@@ -4,6 +4,9 @@
 # The platform runner is unprivileged (cannot create /usr/local/share).
 # Student materials always land under $HOME/eda-lab.
 # The system share is used only when /usr/local/share is writable.
+#
+# Requires the full workshop checkout so
+# {{ playbook_dir }}/../lab-materials/ is present (sibling of setup-automation/).
 
 - name: Environment Setup
   hosts: localhost
@@ -12,7 +15,35 @@
   vars:
     eda_lab_root: /usr/local/share/eda-lab
     student_eda_lab: "{{ lookup('env', 'HOME') }}/eda-lab"
+    lab_materials_src: "{{ playbook_dir }}/../lab-materials"
   tasks:
+    - name: Require starter rulebook in checkout
+      ansible.builtin.stat:
+        path: "{{ lab_materials_src }}/rulebooks/alert-response.starter.yml"
+      register: starter_src
+
+    - name: Require injector script in checkout
+      ansible.builtin.stat:
+        path: "{{ lab_materials_src }}/bin/inject-alert.sh"
+      register: injector_src
+
+    - name: Require reset playbook in checkout
+      ansible.builtin.stat:
+        path: "{{ lab_materials_src }}/playbooks/reset_track.yml"
+      register: reset_pb_src
+
+    - name: Fail early if lab-materials is missing from the checkout
+      ansible.builtin.assert:
+        that:
+          - starter_src.stat.exists
+          - injector_src.stat.exists
+          - reset_pb_src.stat.exists
+        fail_msg: >-
+          lab-materials/ is incomplete or missing next to setup-automation/
+          (expected rulebooks/alert-response.starter.yml, bin/inject-alert.sh,
+          playbooks/reset_track.yml). Project Zero must check out the full
+          workshop repo, not setup-automation alone.
+
     - name: Check whether /usr/local/share is writable
       ansible.builtin.stat:
         path: /usr/local/share
@@ -41,13 +72,13 @@
 
     - name: Sync lab materials into the student home
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/../lab-materials/"
+        src: "{{ lab_materials_src }}/"
         dest: "{{ student_eda_lab }}/materials/"
         mode: preserve
 
     - name: Sync lab materials into the system share
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/../lab-materials/"
+        src: "{{ lab_materials_src }}/"
         dest: "{{ eda_lab_root }}/"
         mode: preserve
       when: system_share.stat.exists and system_share.stat.writeable
@@ -83,9 +114,49 @@
         state: link
         force: true
 
+    - name: Verify required student files after install
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: installed_student_files
+      loop:
+        - "{{ student_eda_lab }}/materials/rulebooks/alert-response.starter.yml"
+        - "{{ student_eda_lab }}/bin/inject-alert.sh"
+        - "{{ student_eda_lab }}/materials/playbooks/reset_track.yml"
+
+    - name: Fail if student materials are missing after install
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+        fail_msg: "Setup did not install {{ item.item }}"
+      loop: "{{ installed_student_files.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Verify system share files when writable
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: installed_system_files
+      loop:
+        - "{{ eda_lab_root }}/rulebooks/alert-response.starter.yml"
+        - "{{ eda_lab_root }}/bin/inject-alert.sh"
+        - "{{ eda_lab_root }}/playbooks/reset_track.yml"
+      when: system_share.stat.exists and system_share.stat.writeable
+
+    - name: Fail if system share materials are missing after install
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+        fail_msg: "Setup did not install {{ item.item }}"
+      loop: "{{ installed_system_files.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: system_share.stat.exists and system_share.stat.writeable
+
     - name: Setup summary
       ansible.builtin.debug:
         msg: >-
-          Lab materials synced under {{ student_eda_lab }}.
+          Lab materials synced under {{ student_eda_lab }}/materials/
+          (starter: {{ student_eda_lab }}/materials/rulebooks/alert-response.starter.yml).
+          System share {{ eda_lab_root }} writable={{ system_share.stat.exists and system_share.stat.writeable }}.
           Floci API route is https://floci-{{ lookup('env', 'GUID') }}.{{ lookup('env', 'DOMAIN') }}/.
           Floci UI route is https://floci-ui-{{ lookup('env', 'GUID') }}.{{ lookup('env', 'DOMAIN') }}/.
