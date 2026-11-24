@@ -206,25 +206,27 @@
       register: project_sync
       changed_when: project_sync.status in [200, 202]
 
-    - name: Wait for project sync to succeed
+    - name: Record project update id
+      ansible.builtin.set_fact:
+        project_update_id: "{{ project_sync.json.id }}"
+
+    - name: Wait for this project update to succeed
       ansible.builtin.uri:
-        url: "{{ controller_api }}/projects/{{ project_id }}/"
+        url: "{{ controller_api }}/project_updates/{{ project_update_id }}/"
         method: GET
         user: "{{ aap_username }}"
         password: "{{ aap_password }}"
         force_basic_auth: true
         validate_certs: false
         status_code: [200]
-      register: project_status
+      register: project_update_status
       until: >-
-        (project_status.json.status | default('')) in ['successful', 'ok']
-        or (
-          (project_status.json.summary_fields.last_update.status | default(''))
-          == 'successful'
-        )
+        (project_update_status.json.status | default('')) in ['successful']
       retries: 60
       delay: 5
       changed_when: false
+      failed_when: >-
+        (project_update_status.json.status | default('')) in ['failed', 'error', 'canceled']
 
     - name: Look up lab inventory
       ansible.builtin.uri:
@@ -312,7 +314,7 @@
       ansible.builtin.include_tasks: tasks/ensure_job_template.yml
       loop: "{{ lab_job_templates }}"
       loop_control:
-        label: "{{ item.name }}"
+        label: "{{ jt_item.name }}"
         loop_var: jt_item
 
     - name: Refresh job template id map
@@ -341,7 +343,7 @@
       ansible.builtin.include_tasks: tasks/ensure_workflow.yml
       loop: "{{ lab_workflows }}"
       loop_control:
-        label: "{{ item.name }}"
+        label: "{{ wf_item.name }}"
         loop_var: wf_item
 
     - name: Controller seed summary
