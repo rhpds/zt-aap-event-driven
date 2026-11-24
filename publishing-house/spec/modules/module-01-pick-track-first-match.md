@@ -30,8 +30,8 @@ Learners choose one cloud misconfiguration track (S3, security group, or runaway
 
 1. Present track scenarios (S3 / SG / runaway / all three); learner runs `~/eda-lab/bin/select-track.sh` to write `~/eda-lab/track` and clone the workshop from Gitea.
 2. Explain source, condition, and action; edit `rulebooks/alert-response.yml` in the terminal for the chosen track (or all three rules), then commit and push to Gitea.
-3. Create an Automation Controller project pointing at the Gitea repo (playbooks / Job Templates).
-4. Create an Event-Driven Ansible project pointing at the same Gitea repo (rulebooks); sync and confirm `alert-response.yml`.
+3. Confirm setup-seeded Automation Controller project `EDA Lab - Playbooks` and remediate/verify Job Templates (and optional workflows).
+4. Create an Event-Driven Ansible project pointing at Gitea (rulebooks); sync and confirm `alert-response.yml`.
 5. Create a rulebook activation for that rulebook; ensure it reaches running state.
 6. Run the track-specific injector happy-path payload (loop s3/sg/ec2 if track is `all`).
 7. In Rule Audit, locate the matching event(s) and confirm the Job Template launched.

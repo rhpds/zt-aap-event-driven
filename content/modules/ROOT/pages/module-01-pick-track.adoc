@@ -6,7 +6,7 @@
 
 * Choose a Floci track (or all three) and record it for validation
 * Clone the lab repo from Gitea, edit the rulebook in the terminal, and push
-* Create Automation Controller and Event-Driven Ansible projects from that repo
+* Confirm pre-seeded Controller Job Templates; create the EDA project yourself
 * Configure a rulebook activation and find the match in Rule Audit
 
 Time: ~35 minutes
@@ -142,43 +142,30 @@ git push "https://${GITEA_USER}@${GITEA_REPO_URL#https://}" HEAD:main
 
 Optional: open the *Gitea* tab and confirm `rulebooks/alert-response.yml` shows your commit.
 
-== Create an Automation Controller project
+== Confirm Automation Controller is pre-seeded
 
-Job Templates need playbooks from source control. Point Automation Controller at the same Gitea repo.
+Lab setup already created the Controller objects you will call from the rulebook.
+You do *not* create the playbook project or Job Templates.
 
 . Open the *AAP* tab and sign in
 . Go to *Automation Execution* → *Projects*
-. Click *Create project*
-. Fill in:
-
-* *Name*: `EDA Lab - Playbooks`
-* *Organization*: `Default`
-* *Source control type*: Git
-* *Source control URL*: value of `GITEA_REPO_URL` from `~/eda-lab/lab.env` (also printed by `select-track.sh`)
-* *Source control branch/tag/commit*: `main`
-* *Options*: clear *Verify SSL* if the lab uses a local TLS cert that Controllers reject
-* *Source control credential* (if prompted for auth): create a *Source Control* credential with username `gitea` / password `ansible123!`, then select it
-
-. Click *Create project* and wait for a successful sync (green check / last job succeeded)
-
-Show the URL anytime with:
-
-[source,bash]
-----
-source ~/eda-lab/lab.env && echo "$GITEA_REPO_URL"
-----
-
-Confirm the pre-built Job Templates exist (or are available after sync) under *Automation Execution* → *Templates*:
+. Confirm project *EDA Lab - Playbooks* exists and last sync succeeded
+. Go to *Automation Execution* → *Templates* and confirm these Job Templates exist:
 
 * `Remediate - S3 BPA` / `Verify - S3 BPA`
 * `Remediate - SG Quarantine` / `Verify - SG Quarantine`
 * `Remediate - Stop Instance` / `Verify - Stop Instance`
 
-NOTE: If templates are already provisioned by lab bootstrap, still create (or verify) this project so playbook SCM matches what you push to Gitea.
+Optional (Module 4): workflows `WF - S3 remediate verify`, `WF - SG remediate verify`,
+`WF - EC2 remediate verify` may already be present.
+
+NOTE: Controller playbooks are seeded from the public workshop Git repo.
+Your Gitea clone is for *rulebooks* (EDA) — that is the next step.
 
 == Create an Event-Driven Ansible project
 
-EDA loads *rulebooks* from a Git project — separate from the Controller playbook project, even when the URL is the same repo.
+EDA loads *rulebooks* from Git. You create this project yourself and point it at Gitea
+(the repo you just pushed).
 
 . In AAP, go to *Automation Decisions* → *Projects*
 . Click *Create project*
@@ -187,10 +174,17 @@ EDA loads *rulebooks* from a Git project — separate from the Controller playbo
 * *Name*: `EDA Lab - Rulebooks`
 * *Organization*: `Default`
 * *Source control type*: Git
-* *Source control URL*: same `GITEA_REPO_URL` as the Controller project
+* *Source control URL*: `GITEA_REPO_URL` from `~/eda-lab/lab.env` (also printed by `select-track.sh`)
 * *Source control branch/tag/commit*: `main`
-* *Source control credential*: same Gitea credential as Controller (if required)
+* *Source control credential*: create a *Source Control* credential with username `gitea` / password `ansible123!` if the project requires auth
 * *Options*: clear *Verify SSL* if needed for lab TLS
+
+Show the URL anytime with:
+
+[source,bash]
+----
+source ~/eda-lab/lab.env && echo "$GITEA_REPO_URL"
+----
 
 . Click *Create project* and wait for sync to finish
 . Open the project and confirm `rulebooks/alert-response.yml` (or `alert-response.yml`) appears in the rulebook list

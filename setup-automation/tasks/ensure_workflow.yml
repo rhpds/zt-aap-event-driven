@@ -1,0 +1,115 @@
+---
+# Expects: wf_item {name, first, second}, jt_ids map, controller_api, aap_*,
+# organization_id, inventory_id
+
+- name: "Look up workflow {{ wf_item.name }}"
+  ansible.builtin.uri:
+    url: "{{ controller_api }}/workflow_job_templates/?name={{ wf_item.name | urlencode }}"
+    method: GET
+    user: "{{ aap_username }}"
+    password: "{{ aap_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: [200]
+  register: wf_lookup
+  changed_when: false
+
+- name: "Require job templates for workflow {{ wf_item.name }}"
+  ansible.builtin.assert:
+    that:
+      - wf_item.first in jt_ids
+      - wf_item.second in jt_ids
+    fail_msg: >-
+      Missing JT ids for workflow {{ wf_item.name }}
+      (need '{{ wf_item.first }}' and '{{ wf_item.second }}').
+
+- name: "Create workflow {{ wf_item.name }}"
+  ansible.builtin.uri:
+    url: "{{ controller_api }}/workflow_job_templates/"
+    method: POST
+    user: "{{ aap_username }}"
+    password: "{{ aap_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: [201, 200]
+    body_format: json
+    body:
+      name: "{{ wf_item.name }}"
+      description: "Remediate then verify — seeded by setup-automation"
+      organization: "{{ organization_id | int }}"
+      inventory: "{{ inventory_id | int }}"
+      ask_inventory_on_launch: false
+  register: wf_create
+  when: wf_lookup.json.count | int == 0
+
+- name: "Resolve workflow id for {{ wf_item.name }}"
+  ansible.builtin.set_fact:
+    workflow_id: >-
+      {{
+        wf_create.json.id
+        if wf_create.json.id is defined
+        else wf_lookup.json.results[0].id
+      }}
+
+- name: "List existing nodes for workflow {{ wf_item.name }}"
+  ansible.builtin.uri:
+    url: "{{ controller_api }}/workflow_job_templates/{{ workflow_id }}/workflow_nodes/"
+    method: GET
+    user: "{{ aap_username }}"
+    password: "{{ aap_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: [200]
+  register: wf_nodes
+  changed_when: false
+
+- name: "Create remediate node for {{ wf_item.name }}"
+  ansible.builtin.uri:
+    url: "{{ controller_api }}/workflow_job_template_nodes/"
+    method: POST
+    user: "{{ aap_username }}"
+    password: "{{ aap_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: [201, 200]
+    body_format: json
+    body:
+      workflow_job_template: "{{ workflow_id | int }}"
+      unified_job_template: "{{ jt_ids[wf_item.first] | int }}"
+      identifier: remediate
+  register: node_first
+  when: wf_nodes.json.count | int == 0
+
+- name: "Create verify node for {{ wf_item.name }}"
+  ansible.builtin.uri:
+    url: "{{ controller_api }}/workflow_job_template_nodes/"
+    method: POST
+    user: "{{ aap_username }}"
+    password: "{{ aap_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: [201, 200]
+    body_format: json
+    body:
+      workflow_job_template: "{{ workflow_id | int }}"
+      unified_job_template: "{{ jt_ids[wf_item.second] | int }}"
+      identifier: verify
+  register: node_second
+  when: wf_nodes.json.count | int == 0
+
+- name: "Connect remediate success to verify for {{ wf_item.name }}"
+  ansible.builtin.uri:
+    url: "{{ controller_api }}/workflow_job_template_nodes/{{ node_first.json.id }}/success_nodes/"
+    method: POST
+    user: "{{ aap_username }}"
+    password: "{{ aap_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: [204, 200, 201]
+    body_format: json
+    body:
+      id: "{{ node_second.json.id | int }}"
+  when:
+    - wf_nodes.json.count | int == 0
+    - node_first.json.id is defined
+    - node_second.json.id is defined

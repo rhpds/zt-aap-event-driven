@@ -1,0 +1,355 @@
+---
+# Seed Automation Controller (not EDA): project, inventory, job templates, workflows.
+# Runs on the AAP control VM. Students still create the EDA project + activation.
+#
+# Playbooks come from the public GitHub workshop repo so setup does not depend on
+# Gitea being healthy. EDA continues to use the lab Gitea clone for rulebooks.
+
+- name: Configure Automation Controller lab objects
+  hosts: control
+  gather_facts: false
+  become: false
+  vars:
+    aap_username: "{{ lookup('env', 'AAP_USERNAME') | default('admin', true) }}"
+    aap_password: >-
+      {{ lookup('env', 'AAP_PASSWORD')
+         | default(lookup('env', 'BASTION_PASSWORD') | default('ansible123!', true), true) }}
+    lab_guid: "{{ lookup('env', 'GUID') }}"
+    lab_domain: "{{ lookup('env', 'DOMAIN') }}"
+    floci_endpoint: "https://floci-{{ lookup('env', 'GUID') }}.{{ lookup('env', 'DOMAIN') }}"
+    # Public upstream — same content Gitea migrates; avoids Gitea 503 during setup.
+    controller_scm_url: https://github.com/ansible-tmm/event-driven-aap-workshop.git
+    controller_project_name: EDA Lab - Playbooks
+    controller_inventory_name: EDA Lab - Local
+    organization_name: Default
+    lab_job_templates:
+      - name: Remediate - S3 BPA
+        playbook: playbooks/remediate_s3.yml
+      - name: Verify - S3 BPA
+        playbook: playbooks/verify_s3.yml
+      - name: Remediate - SG Quarantine
+        playbook: playbooks/remediate_sg.yml
+      - name: Verify - SG Quarantine
+        playbook: playbooks/verify_sg.yml
+      - name: Remediate - Stop Instance
+        playbook: playbooks/remediate_ec2.yml
+      - name: Verify - Stop Instance
+        playbook: playbooks/verify_ec2.yml
+    lab_workflows:
+      - name: WF - S3 remediate verify
+        first: Remediate - S3 BPA
+        second: Verify - S3 BPA
+      - name: WF - SG remediate verify
+        first: Remediate - SG Quarantine
+        second: Verify - SG Quarantine
+      - name: WF - EC2 remediate verify
+        first: Remediate - Stop Instance
+        second: Verify - Stop Instance
+  tasks:
+    - name: Require GUID and DOMAIN for Floci extra vars
+      ansible.builtin.assert:
+        that:
+          - lab_guid | length > 0
+          - lab_domain | length > 0
+        fail_msg: "GUID and DOMAIN must be set in the setup runner environment."
+
+    - name: Discover Controller API base (retry until AAP is up)
+      ansible.builtin.shell: |
+        set -euo pipefail
+        for attempt in $(seq 1 36); do
+          for base in \
+            https://127.0.0.1/api/controller/v2 \
+            https://localhost/api/controller/v2 \
+            https://127.0.0.1/api/v2 \
+            https://localhost/api/v2
+          do
+            code=$(curl -k -s -o /dev/null -w '%{http_code}' \
+              -u "{{ aap_username }}:{{ aap_password }}" \
+              "${base}/ping/" || true)
+            if [ "$code" = "200" ] || [ "$code" = "401" ] || [ "$code" = "403" ]; then
+              printf '%s\n' "$base"
+              exit 0
+            fi
+          done
+          sleep 10
+        done
+        echo "NO_API" >&2
+        exit 1
+      args:
+        executable: /bin/bash
+      register: api_discover
+      changed_when: false
+
+    - name: Set Controller API base
+      ansible.builtin.set_fact:
+        controller_api: "{{ api_discover.stdout | trim }}"
+
+    - name: Fail if Controller API is unreachable
+      ansible.builtin.assert:
+        that:
+          - controller_api | length > 0
+          - controller_api != 'NO_API'
+        fail_msg: >-
+          Could not reach Automation Controller API after waiting.
+          Set AAP_USERNAME/AAP_PASSWORD if admin credentials differ from defaults.
+
+    - name: Authenticate against Controller API
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/me/"
+        method: GET
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      register: controller_me
+      retries: 12
+      delay: 10
+      until: controller_me.status | default(0) == 200
+      changed_when: false
+
+    - name: Look up Default organization
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/organizations/?name={{ organization_name | urlencode }}"
+        method: GET
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      register: org_lookup
+      changed_when: false
+
+    - name: Set organization id
+      ansible.builtin.set_fact:
+        organization_id: "{{ org_lookup.json.results[0].id }}"
+
+    - name: Look up existing Controller project
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/projects/?name={{ controller_project_name | urlencode }}"
+        method: GET
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      register: project_lookup
+      changed_when: false
+
+    - name: Create Controller project for lab playbooks
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/projects/"
+        method: POST
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [201, 200]
+        body_format: json
+        body:
+          name: "{{ controller_project_name }}"
+          description: Lab remediate/verify playbooks (seeded by setup-automation)
+          organization: "{{ organization_id | int }}"
+          scm_type: git
+          scm_url: "{{ controller_scm_url }}"
+          scm_branch: main
+          scm_clean: true
+          scm_delete_on_update: false
+          scm_update_on_launch: true
+          scm_update_cache_timeout: 0
+      register: project_create
+      when: project_lookup.json.count | int == 0
+
+    - name: Update Controller project if it already exists
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/projects/{{ project_lookup.json.results[0].id }}/"
+        method: PATCH
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+        body_format: json
+        body:
+          scm_type: git
+          scm_url: "{{ controller_scm_url }}"
+          scm_branch: main
+          scm_update_on_launch: true
+      register: project_update
+      when: project_lookup.json.count | int > 0
+
+    - name: Re-read Controller project after create/update
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/projects/?name={{ controller_project_name | urlencode }}"
+        method: GET
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      register: project_resolved
+      changed_when: false
+
+    - name: Resolve project id
+      ansible.builtin.set_fact:
+        project_id: "{{ project_resolved.json.results[0].id }}"
+
+    - name: Launch project update (sync playbooks)
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/projects/{{ project_id }}/update/"
+        method: POST
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [202, 200]
+      register: project_sync
+      changed_when: project_sync.status in [200, 202]
+
+    - name: Wait for project sync to succeed
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/projects/{{ project_id }}/"
+        method: GET
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      register: project_status
+      until: >-
+        (project_status.json.status | default('')) in ['successful', 'ok']
+        or (
+          (project_status.json.summary_fields.last_update.status | default(''))
+          == 'successful'
+        )
+      retries: 60
+      delay: 5
+      changed_when: false
+
+    - name: Look up lab inventory
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/inventories/?name={{ controller_inventory_name | urlencode }}"
+        method: GET
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      register: inventory_lookup
+      changed_when: false
+
+    - name: Create lab inventory
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/inventories/"
+        method: POST
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [201, 200]
+        body_format: json
+        body:
+          name: "{{ controller_inventory_name }}"
+          description: Localhost inventory for Floci remediate/verify jobs
+          organization: "{{ organization_id | int }}"
+          variables: |
+            ---
+            floci_endpoint: "{{ floci_endpoint }}"
+            FLOCI_ENDPOINT: "{{ floci_endpoint }}"
+            GUID: "{{ lab_guid }}"
+            DOMAIN: "{{ lab_domain }}"
+      register: inventory_create
+      when: inventory_lookup.json.count | int == 0
+
+    - name: Re-read lab inventory
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/inventories/?name={{ controller_inventory_name | urlencode }}"
+        method: GET
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      register: inventory_resolved
+      changed_when: false
+
+    - name: Resolve inventory id
+      ansible.builtin.set_fact:
+        inventory_id: "{{ inventory_resolved.json.results[0].id }}"
+
+    - name: Look up localhost in lab inventory
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/hosts/?name=localhost&inventory={{ inventory_id }}"
+        method: GET
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      register: host_lookup
+      changed_when: false
+
+    - name: Add localhost to lab inventory
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/hosts/"
+        method: POST
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [201, 200]
+        body_format: json
+        body:
+          name: localhost
+          inventory: "{{ inventory_id | int }}"
+          variables: |
+            ---
+            ansible_connection: local
+            ansible_python_interpreter: /usr/libexec/platform-python
+      when: host_lookup.json.count | int == 0
+
+    - name: Ensure each lab job template exists
+      ansible.builtin.include_tasks: tasks/ensure_job_template.yml
+      loop: "{{ lab_job_templates }}"
+      loop_control:
+        label: "{{ item.name }}"
+        loop_var: jt_item
+
+    - name: Refresh job template id map
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/job_templates/?page_size=200"
+        method: GET
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      register: all_jts
+      changed_when: false
+
+    - name: Build name-to-id map for job templates
+      ansible.builtin.set_fact:
+        jt_ids: >-
+          {{
+            dict(all_jts.json.results
+              | map(attribute='name')
+              | zip(all_jts.json.results | map(attribute='id'))
+              | list)
+          }}
+
+    - name: Ensure each remediate-then-verify workflow exists
+      ansible.builtin.include_tasks: tasks/ensure_workflow.yml
+      loop: "{{ lab_workflows }}"
+      loop_control:
+        label: "{{ item.name }}"
+        loop_var: wf_item
+
+    - name: Controller seed summary
+      ansible.builtin.debug:
+        msg: >-
+          Seeded Controller project '{{ controller_project_name }}' from {{ controller_scm_url }},
+          inventory '{{ controller_inventory_name }}',
+          {{ lab_job_templates | length }} job templates,
+          {{ lab_workflows | length }} workflows.
+          FLOCI_ENDPOINT={{ floci_endpoint }}.
+          EDA project/activation left for the student.

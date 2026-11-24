@@ -67,9 +67,9 @@ Beginner (introduces EDA; finishes with intermediate guardrail and verify patter
 
 ## Environment
 
-**Learner view:** Pre-provisioned AAP 2.6 (Controller + EDA). Pre-built remediate/verify/escalate Job Templates per track. Floci AWS emulator seeded with all three misconfigurations (learner remediates only their track). Alert injector with per-track payloads (happy path, wrong env, low severity). Learners pick a track once, edit one rulebook, configure one activation and Event Stream, and follow track-labeled procedures.
+**Learner view:** Pre-provisioned AAP 2.6 (Controller + EDA). Setup seeds the Controller project `EDA Lab - Playbooks`, localhost inventory, remediate/verify Job Templates, and optional remediate→verify workflows. Learners create the EDA project + activation themselves. Floci AWS emulator seeded with all three misconfigurations (learner remediates only their track). Alert injector with per-track payloads (happy path, wrong env, low severity). Learners pick a track once, edit one rulebook on Gitea, configure one activation and Event Stream, and follow track-labeled procedures.
 
-**Automation needed:** Yes — bootstrap AAP objects, Floci install/seed/reset, event injector, track marker for validate, solve/validate scripts.
+**Automation needed:** Yes — bootstrap Controller project/JTs/workflows, Floci install/seed/reset, event injector, track marker for validate, solve/validate scripts. EDA project/activation remain student steps.
 
 ## Infrastructure Requirements
 

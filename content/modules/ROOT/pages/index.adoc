@@ -10,7 +10,7 @@ until it remediates a cloud misconfiguration and *verifies* the result.
 You will:
 
 . Choose a track, clone the lab repo from Gitea, and edit the rulebook in the terminal
-. Create Automation Controller and EDA projects, then run a rulebook activation
+. Confirm pre-seeded Controller Job Templates, create the EDA project, and run a rulebook activation
 . Secure intake with *Event Streams*
 . Add environment and severity *guardrails*
 . Remediate and verify a Floci (AWS emulator) resource for your chosen track

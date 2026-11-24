@@ -205,7 +205,7 @@
       loop_control:
         label: "{{ item.item }}"
 
-    - name: Setup summary
+    - name: Materials install summary
       ansible.builtin.debug:
         msg: >-
           Lab materials installed on control under {{ eda_lab_root }} and
@@ -214,3 +214,6 @@
           (also {{ student_eda_lab }}/materials/rulebooks/alert-response.starter.yml).
           Floci API route is https://floci-{{ lookup('env', 'GUID') }}.{{ lookup('env', 'DOMAIN') }}/.
           Floci UI route is https://floci-ui-{{ lookup('env', 'GUID') }}.{{ lookup('env', 'DOMAIN') }}/.
+
+- name: Seed Automation Controller project and templates
+  ansible.builtin.import_playbook: configure_controller.yml
