@@ -128,15 +128,16 @@ Gitea credentials:
 * Username: `gitea`
 * Password: `ansible123!`
 
-[source,bash,subs="+attributes"]
+[source,bash]
 ----
 cd ~/eda-lab/workshop
 git add rulebooks/alert-response.yml
 git config user.email "student@example.com"
 git config user.name "Lab Student"
 git commit -m "Configure alert-response for $(cat ~/eda-lab/track)"
-git push https://gitea@gitea-{guid}.{domain}/gitea/event-driven-aap-workshop.git HEAD:main
-# enter password: ansible123!
+# URL is printed by select-track.sh; password: ansible123!
+source ~/eda-lab/lab.env
+git push "https://${GITEA_USER}@${GITEA_REPO_URL#https://}" HEAD:main
 ----
 
 Optional: open the *Gitea* tab and confirm `rulebooks/alert-response.yml` shows your commit.
@@ -153,12 +154,19 @@ Job Templates need playbooks from source control. Point Automation Controller at
 * *Name*: `EDA Lab - Playbooks`
 * *Organization*: `Default`
 * *Source control type*: Git
-* *Source control URL*: `https://gitea-{guid}.{domain}/gitea/event-driven-aap-workshop.git`
+* *Source control URL*: value of `GITEA_REPO_URL` from `~/eda-lab/lab.env` (also printed by `select-track.sh`)
 * *Source control branch/tag/commit*: `main`
 * *Options*: clear *Verify SSL* if the lab uses a local TLS cert that Controllers reject
 * *Source control credential* (if prompted for auth): create a *Source Control* credential with username `gitea` / password `ansible123!`, then select it
 
 . Click *Create project* and wait for a successful sync (green check / last job succeeded)
+
+Show the URL anytime with:
+
+[source,bash]
+----
+source ~/eda-lab/lab.env && echo "$GITEA_REPO_URL"
+----
 
 Confirm the pre-built Job Templates exist (or are available after sync) under *Automation Execution* → *Templates*:
 
@@ -179,7 +187,7 @@ EDA loads *rulebooks* from a Git project — separate from the Controller playbo
 * *Name*: `EDA Lab - Rulebooks`
 * *Organization*: `Default`
 * *Source control type*: Git
-* *Source control URL*: `https://gitea-{guid}.{domain}/gitea/event-driven-aap-workshop.git`
+* *Source control URL*: same `GITEA_REPO_URL` as the Controller project
 * *Source control branch/tag/commit*: `main`
 * *Source control credential*: same Gitea credential as Controller (if required)
 * *Options*: clear *Verify SSL* if needed for lab TLS

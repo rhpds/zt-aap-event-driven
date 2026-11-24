@@ -8,22 +8,50 @@ EDA_LAB="${HOME}/eda-lab"
 TRACK_FILE="${EDA_LAB}/track"
 CLONE_DIR="${EDA_LAB}/workshop"
 RULEBOOK_LINK="${EDA_LAB}/rulebooks/alert-response.yml"
+LAB_ENV="${EDA_LAB}/lab.env"
+SYSTEM_LAB_ENV="/usr/local/share/eda-lab/lab.env"
 
-GUID="${GUID:-}"
-DOMAIN="${DOMAIN:-}"
 GITEA_USER="${GITEA_USER:-gitea}"
 GITEA_PASS="${GITEA_PASS:-ansible123!}"
+GITEA_REPO_URL="${GITEA_URL:-}"
 
-if [[ -z "${GUID}" || -z "${DOMAIN}" ]]; then
-  echo "GUID and DOMAIN must be set in the environment (lab control node)." >&2
-  echo "Example: export GUID=abc12 DOMAIN=apps.example.com" >&2
-  exit 1
+# Lab URLs are written at provision time — students never need GUID/DOMAIN.
+load_lab_env() {
+  local env_file=""
+  if [[ -f "${LAB_ENV}" ]]; then
+    env_file="${LAB_ENV}"
+  elif [[ -f "${SYSTEM_LAB_ENV}" ]]; then
+    env_file="${SYSTEM_LAB_ENV}"
+  else
+    return 1
+  fi
+  # shellcheck disable=SC1090
+  set -a
+  # shellcheck disable=SC1090
+  source "${env_file}"
+  set +a
+  return 0
+}
+
+load_lab_env || true
+
+GITEA_USER="${GITEA_USER:-gitea}"
+GITEA_PASS="${GITEA_PASS:-ansible123!}"
+GITEA_REPO_URL="${GITEA_URL:-${GITEA_REPO_URL:-}}"
+
+if [[ -z "${GITEA_REPO_URL}" ]]; then
+  echo "Gitea repo URL was not provisioned into ${LAB_ENV}." >&2
+  echo "Open the Gitea tab, copy the repo HTTPS URL, and paste it below" >&2
+  echo "(example: https://gitea-….apps.…/gitea/event-driven-aap-workshop.git)" >&2
+  read -r -p "Gitea repo URL: " GITEA_REPO_URL
+  GITEA_REPO_URL="${GITEA_REPO_URL%.git}.git"
 fi
 
-GITEA_HOST="gitea-${GUID}.${DOMAIN}"
-GITEA_REPO_URL="${GITEA_URL:-https://${GITEA_HOST}/gitea/event-driven-aap-workshop.git}"
-# Embed credentials for non-interactive HTTPS clone (lab-only password).
-GITEA_CLONE_URL="https://${GITEA_USER}:${GITEA_PASS}@${GITEA_HOST}/gitea/event-driven-aap-workshop.git"
+# Build an authenticated clone URL from the public HTTPS URL (lab password only).
+gitea_host_path="${GITEA_REPO_URL#https://}"
+gitea_host_path="${gitea_host_path#http://}"
+GITEA_CLONE_URL="https://${GITEA_USER}:${GITEA_PASS}@${gitea_host_path}"
+GITEA_PUSH_URL="https://${GITEA_USER}@${gitea_host_path}"
 
 mkdir -p "${EDA_LAB}/rulebooks" "${EDA_LAB}/bin"
 
@@ -113,7 +141,8 @@ Next steps:
        git config user.email "student@example.com"
        git config user.name "Lab Student"
        git commit -m "Configure alert-response for track ${TRACK}"
-       git push https://${GITEA_USER}@${GITEA_HOST}/gitea/event-driven-aap-workshop.git HEAD:main
+       git push ${GITEA_PUSH_URL} HEAD:main
+       # password when prompted: ${GITEA_PASS}
 
   3. Follow the lab instructions to create Automation Controller and
      Event-Driven Ansible projects pointing at:
