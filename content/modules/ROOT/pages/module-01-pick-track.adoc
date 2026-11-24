@@ -4,8 +4,9 @@
 
 == Objectives
 
-* Select one Floci cloud track and record it for validation
-* Create a rulebook that matches your track's alert and runs a Job Template
+* Choose a Floci track (or all three) and record it for validation
+* Clone the lab repo from Gitea, edit the rulebook in the terminal, and push
+* Create Automation Controller and Event-Driven Ansible projects from that repo
 * Configure a rulebook activation and find the match in Rule Audit
 
 Time: ~35 minutes
@@ -18,70 +19,191 @@ EDA reacts to *events*. A rulebook defines:
 . *Condition* — when to act
 . *Action* — what to run (usually a Controller Job Template)
 
-You will grow *one* file — `~/eda-lab/rulebooks/alert-response.yml` — across all modules.
+You will grow *one* file — `rulebooks/alert-response.yml` in your Gitea clone — across all modules.
 
 == Choose your track
 
-In the terminal:
+Pick one path for the whole lab (or take all three if you have time).
+
+[cols="1,3",options="header"]
+|===
+| Option | Scenario
+
+| *1 — S3 public exposure*
+| A storage bucket is world-readable. You match `S3PublicExposure`, enable Block Public Access with `Remediate - S3 BPA`, and later verify BPA on Floci. Simplest Floci path — good default if you are unsure.
+
+| *2 — Open security group*
+| A security group allows wide `0.0.0.0/0` ingress. You match `OpenSecurityGroup`, quarantine or revoke the open rules with `Remediate - SG Quarantine`, and verify the group is locked down.
+
+| *3 — Runaway instance*
+| An EC2-like instance is running out of policy. You match `RunawayInstance`, stop it (with quarantine tags) via `Remediate - Stop Instance`, and verify instance state and tags.
+
+| *4 — All three examples*
+| Build *one* rulebook with a rule for each alert above. You will inject and audit all three paths. Longer than a single track — use this if you want the full set of examples.
+|===
+
+In the *terminal* tab, run the interactive selector. It writes `~/eda-lab/track`, clones the workshop from Gitea, and prepares `alert-response.yml` for editing:
 
 [source,bash]
 ----
-mkdir -p ~/eda-lab/rulebooks
-# Pick ONE:
-echo s3 > ~/eda-lab/track    # Track A — S3
-# echo sg > ~/eda-lab/track  # Track B — Security group
-# echo ec2 > ~/eda-lab/track # Track C — Runaway instance
+~/eda-lab/bin/select-track.sh
+----
+
+Confirm the marker:
+
+[source,bash]
+----
 cat ~/eda-lab/track
+# expect: s3 | sg | ec2 | all
 ----
 
-Remember your choice. Validate reads `~/eda-lab/track`.
+NOTE: Validate reads `~/eda-lab/track`. Re-run the script if you need to change tracks.
 
-== Shared: copy the starter rulebook
+== Edit the rulebook in the terminal
+
+The selector clones to `~/eda-lab/workshop` and links
+`~/eda-lab/rulebooks/alert-response.yml` → that working copy.
+
+Open the file:
 
 [source,bash]
 ----
-cp ~/eda-lab/materials/rulebooks/alert-response.starter.yml \
-  ~/eda-lab/rulebooks/alert-response.yml
+nano ~/eda-lab/workshop/rulebooks/alert-response.yml
+# or: vim ~/eda-lab/workshop/rulebooks/alert-response.yml
 ----
 
-If that path is missing, use the system share copy instead:
+Set the *condition* `alertname` and the *Job Template* name for your choice:
 
-[source,bash]
+[cols="1,2,2",options="header"]
+|===
+| Track | Condition | Job Template
+
+| S3 (`s3`)
+| `event.payload.alertname == "S3PublicExposure"`
+| `Remediate - S3 BPA`
+
+| Security group (`sg`)
+| `event.payload.alertname == "OpenSecurityGroup"`
+| `Remediate - SG Quarantine`
+
+| Runaway instance (`ec2`)
+| `event.payload.alertname == "RunawayInstance"`
+| `Remediate - Stop Instance`
+
+| All three (`all`)
+| One rule per alertname above
+| Matching remediate JT for each rule
+|===
+
+Starter file (single S3 rule — change or extend for your track):
+
+[source,yaml]
 ----
-cp /usr/local/share/eda-lab/rulebooks/alert-response.starter.yml \
-  ~/eda-lab/rulebooks/alert-response.yml
+---
+- name: Alert response
+  hosts: all
+  sources:
+    - ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5000
+  rules:
+    - name: Match track alert and remediate
+      condition: event.payload.alertname == "S3PublicExposure"
+      action:
+        run_job_template:
+          name: "Remediate - S3 BPA"
+          organization: Default
 ----
 
-Open the file. You will set the condition `alertname` and the Job Template name for your track.
+For *all three*, keep the same source and add three rules (S3, SG, and runaway) each pointing at its remediate Job Template.
 
-== Track procedures: first match
+Save the file when finished.
 
-=== Track A — S3
+== Push the rulebook to Gitea
 
-Edit `~/eda-lab/rulebooks/alert-response.yml` so the rule matches
-`alertname == "S3PublicExposure"` and the action runs Job Template
-`Remediate - S3 BPA`.
+AAP projects sync from Git — your edits must be on Gitea before Controller or EDA can use them.
 
-=== Track B — Security group
+Gitea credentials:
 
-Match `alertname == "OpenSecurityGroup"` and run
-`Remediate - SG Quarantine`.
+* Username: `gitea`
+* Password: `ansible123!`
 
-=== Track C — Runaway instance
+[source,bash,subs="+attributes"]
+----
+cd ~/eda-lab/workshop
+git add rulebooks/alert-response.yml
+git config user.email "student@example.com"
+git config user.name "Lab Student"
+git commit -m "Configure alert-response for $(cat ~/eda-lab/track)"
+git push https://gitea@gitea-{guid}.{domain}/gitea/event-driven-aap-workshop.git HEAD:main
+# enter password: ansible123!
+----
 
-Match `alertname == "RunawayInstance"` and run
-`Remediate - Stop Instance`.
+Optional: open the *Gitea* tab and confirm `rulebooks/alert-response.yml` shows your commit.
 
-== Create the project and activation
+== Create an Automation Controller project
 
-. In *Event-Driven Ansible*, ensure a Project points at your rulebook location
-  (lab bootstrap may already sync `~/eda-lab/rulebooks` — follow the on-screen path).
-. Create a *Rulebook Activation*:
-  * Name: `alert-response`
-  * Rulebook: `alert-response.yml`
-  * Decision environment: lab default
-  * Controller token: lab-provided credential
-. Start the activation and wait until status is *Running*.
+Job Templates need playbooks from source control. Point Automation Controller at the same Gitea repo.
+
+. Open the *AAP* tab and sign in
+. Go to *Automation Execution* → *Projects*
+. Click *Create project*
+. Fill in:
+
+* *Name*: `EDA Lab - Playbooks`
+* *Organization*: `Default`
+* *Source control type*: Git
+* *Source control URL*: `https://gitea-{guid}.{domain}/gitea/event-driven-aap-workshop.git`
+* *Source control branch/tag/commit*: `main`
+* *Options*: clear *Verify SSL* if the lab uses a local TLS cert that Controllers reject
+* *Source control credential* (if prompted for auth): create a *Source Control* credential with username `gitea` / password `ansible123!`, then select it
+
+. Click *Create project* and wait for a successful sync (green check / last job succeeded)
+
+Confirm the pre-built Job Templates exist (or are available after sync) under *Automation Execution* → *Templates*:
+
+* `Remediate - S3 BPA` / `Verify - S3 BPA`
+* `Remediate - SG Quarantine` / `Verify - SG Quarantine`
+* `Remediate - Stop Instance` / `Verify - Stop Instance`
+
+NOTE: If templates are already provisioned by lab bootstrap, still create (or verify) this project so playbook SCM matches what you push to Gitea.
+
+== Create an Event-Driven Ansible project
+
+EDA loads *rulebooks* from a Git project — separate from the Controller playbook project, even when the URL is the same repo.
+
+. In AAP, go to *Automation Decisions* → *Projects*
+. Click *Create project*
+. Fill in:
+
+* *Name*: `EDA Lab - Rulebooks`
+* *Organization*: `Default`
+* *Source control type*: Git
+* *Source control URL*: `https://gitea-{guid}.{domain}/gitea/event-driven-aap-workshop.git`
+* *Source control branch/tag/commit*: `main`
+* *Source control credential*: same Gitea credential as Controller (if required)
+* *Options*: clear *Verify SSL* if needed for lab TLS
+
+. Click *Create project* and wait for sync to finish
+. Open the project and confirm `rulebooks/alert-response.yml` (or `alert-response.yml`) appears in the rulebook list
+
+TIP: After every rulebook push in later modules, click *Sync* on this EDA project, then restart the activation so it reloads your YAML.
+
+== Create the rulebook activation
+
+. Go to *Automation Decisions* → *Rulebook Activations*
+. Click *Create rulebook activation*
+. Fill in:
+
+* *Name*: `alert-response`
+* *Project*: `EDA Lab - Rulebooks`
+* *Rulebook*: `alert-response.yml` (path may show under `rulebooks/`)
+* *Decision environment*: lab default (pre-provisioned)
+* *Credential*: lab *Red Hat Ansible Automation Platform* / Controller token credential so `run_job_template` can launch jobs
+* *Restart policy*: `On failure` (or lab default)
+* Enable the activation
+
+. Create and wait until status is *Running*
 
 == Inject a happy-path event
 
@@ -90,14 +212,29 @@ Shared webhook URL for Module 1 (before Event Streams):
 [source,bash]
 ----
 export WEBHOOK_URL="http://localhost:5000/endpoint"   # replace with activation listen URL if different
+----
+
+If your track is `s3`, `sg`, or `ec2`:
+
+[source,bash]
+----
 ~/eda-lab/bin/inject-alert.sh --track "$(cat ~/eda-lab/track)" --env prod --severity critical
+----
+
+If your track is `all`, inject each alert once (`inject-alert.sh` does not accept `all` as a value):
+
+[source,bash]
+----
+for t in s3 sg ec2; do
+  ~/eda-lab/bin/inject-alert.sh --track "$t" --env prod --severity critical
+done
 ----
 
 == Confirm in Rule Audit
 
-. Open *Event-Driven Ansible* → *Rule Audit*
-. Find the matching event for your `alertname`
-. Confirm the remediate Job Template started in Controller
+. Open *Automation Decisions* → *Rule Audit*
+. Find the matching event for your `alertname` (or all three if you chose *all*)
+. Confirm the remediate Job Template started under *Automation Execution* → *Jobs*
 
 NOTE: In Module 1 it is OK if Floci is not fully fixed yet — you only need the match and job launch.
 Module 4 focuses on verified Floci state.
@@ -106,13 +243,12 @@ Module 4 focuses on verified Floci state.
 
 Click *Validate* for Module 1. It checks:
 
-* `~/eda-lab/track` is set to `s3`, `sg`, or `ec2`
-* Activation `alert-response` is running
-* A recent Rule Audit entry exists for your track alert
+* `~/eda-lab/track` is set to `s3`, `sg`, `ec2`, or `all`
+* Rulebook `~/eda-lab/rulebooks/alert-response.yml` exists (linked by the selector)
 
 == Key takeaways
 
 * Source → condition → action is the EDA mental model
-* One activation listens continuously
-* Rule Audit is your evidence trail
+* Edit in Git, sync projects, then activate — Controller holds playbooks; EDA holds rulebooks
+* One activation listens continuously; Rule Audit is your evidence trail
 * Track choice only changes alert name and Job Template — not the model

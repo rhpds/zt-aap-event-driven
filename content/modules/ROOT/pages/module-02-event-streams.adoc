@@ -38,10 +38,13 @@ Restart or update the `alert-response` activation so it reloads the rulebook.
 
 == Negative test: bad token
 
+Use your track value (`s3`, `sg`, or `ec2`). If you chose *all*, use `s3` for the negative test:
+
 [source,bash]
 ----
+TRACK=$(cat ~/eda-lab/track); [[ "$TRACK" == "all" ]] && TRACK=s3
 ~/eda-lab/bin/inject-alert.sh \
-  --track "$(cat ~/eda-lab/track)" \
+  --track "$TRACK" \
   --env prod --severity critical \
   --url "$EVENT_STREAM_URL" \
   --token "invalid-token-on-purpose"
@@ -51,7 +54,7 @@ Expect: HTTP failure or no new successful Rule Audit match for a remediation job
 
 == Track procedures: good token
 
-=== Track A — S3
+=== Track A — S3 (or first pass if *all*)
 
 [source,bash]
 ----
@@ -75,7 +78,8 @@ Expect: HTTP failure or no new successful Rule Audit match for a remediation job
   --url "$EVENT_STREAM_URL" --token "$EVENT_STREAM_TOKEN"
 ----
 
-Confirm Rule Audit shows a match for your track.
+If you chose *all*, run A, B, and C. Otherwise run only your track.
+Confirm Rule Audit shows a match for your alert(s).
 
 == Validate
 

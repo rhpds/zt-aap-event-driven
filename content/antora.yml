@@ -17,4 +17,6 @@ asciidoc:
     floci-host: floci-{guid}.{domain}
     floci-ui-url: https://floci-ui-{guid}.{domain}/
     gitea-url: https://gitea-{guid}.{domain}/
+    gitea-repo-url: https://gitea-{guid}.{domain}/gitea/event-driven-aap-workshop.git
+    gitea-user: gitea
     student-user: rhel

@@ -56,11 +56,17 @@ aws --endpoint-url="https://floci-{guid}.{domain}" ec2 describe-instances --filt
 
 == Track procedures: remediate and verify
 
-Reset your track's resource to the bad state if a prior module already fixed it:
+Reset your track's resource to the bad state if a prior module already fixed it.
+(`reset-track.sh` accepts `s3`, `sg`, or `ec2` — if you chose *all*, reset each):
 
 [source,bash]
 ----
-~/eda-lab/bin/reset-track.sh "$(cat ~/eda-lab/track)"
+TRACK=$(cat ~/eda-lab/track)
+if [[ "$TRACK" == "all" ]]; then
+  for t in s3 sg ec2; do ~/eda-lab/bin/reset-track.sh "$t"; done
+else
+  ~/eda-lab/bin/reset-track.sh "$TRACK"
+fi
 ----
 
 === Track A — S3

@@ -154,6 +154,17 @@
         owner: "{{ student_user }}"
         group: "{{ student_user }}"
 
+    - name: Install interactive track selector
+      ansible.builtin.copy:
+        src: files/select-track.sh
+        dest: "{{ item }}"
+        owner: "{{ student_user }}"
+        group: "{{ student_user }}"
+        mode: "0755"
+      loop:
+        - "{{ student_eda_lab }}/bin/select-track.sh"
+        - "{{ eda_lab_root }}/bin/select-track.sh"
+
     - name: Verify installed starter and scripts on control
       ansible.builtin.stat:
         path: "{{ item }}"
@@ -164,6 +175,7 @@
         - "{{ eda_lab_root }}/playbooks/reset_track.yml"
         - "{{ student_eda_lab }}/materials/rulebooks/alert-response.starter.yml"
         - "{{ student_eda_lab }}/bin/inject-alert.sh"
+        - "{{ student_eda_lab }}/bin/select-track.sh"
         - "{{ student_eda_lab }}/materials/playbooks/reset_track.yml"
 
     - name: Fail if any required student file is missing after install

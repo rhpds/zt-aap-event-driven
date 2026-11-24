@@ -19,9 +19,9 @@
 
     - name: Track selected
       validation_check:
-        check: "{{ track in ['s3', 'sg', 'ec2'] }}"
+        check: "{{ track in ['s3', 'sg', 'ec2', 'all'] }}"
         pass_msg: "Validating Floci track {{ track }}"
-        error_msg: "Missing ~/eda-lab/track"
+        error_msg: "Missing ~/eda-lab/track (run ~/eda-lab/bin/select-track.sh)"
 
     - name: Floci reachable
       ansible.builtin.uri:

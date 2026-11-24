@@ -9,7 +9,8 @@ until it remediates a cloud misconfiguration and *verifies* the result.
 
 You will:
 
-. Create a rulebook (source → condition → action) and run it as an activation
+. Choose a track, clone the lab repo from Gitea, and edit the rulebook in the terminal
+. Create Automation Controller and EDA projects, then run a rulebook activation
 . Secure intake with *Event Streams*
 . Add environment and severity *guardrails*
 . Remediate and verify a Floci (AWS emulator) resource for your chosen track
@@ -19,27 +20,31 @@ that a job started.
 
 == Choose your track
 
-Pick *one* track at the start of Module 1 and keep it for the whole lab.
-Instructions for all three tracks appear in every module — follow only yours.
+In Module 1 you run `~/eda-lab/bin/select-track.sh`, which records your choice and
+clones the workshop from Gitea. Pick *one* track for the whole lab, or take *all three*
+if you want every example. Instructions for each track appear in every module.
 
-[cols="1,2,3",options="header"]
+[cols="1,3",options="header"]
 |===
-| Track | Alert | Floci outcome
+| Track | Scenario
 
-| *A — S3*
-| `S3PublicExposure`
-| Enable Block Public Access; verify BPA
+| *A — S3 public exposure*
+| A bucket is exposed to the internet. Your rulebook matches `S3PublicExposure`,
+enables Block Public Access (`Remediate - S3 BPA`), and later verifies BPA on Floci.
+Simplest path — choose this if you are unsure.
 
-| *B — Security group*
-| `OpenSecurityGroup`
-| Remove wide ingress / quarantine; verify rules
+| *B — Open security group*
+| A security group allows wide `0.0.0.0/0` ingress. You match `OpenSecurityGroup`,
+quarantine or revoke the open rules (`Remediate - SG Quarantine`), and verify the group.
 
 | *C — Runaway instance*
-| `RunawayInstance`
-| Stop instance + quarantine tags; verify state
-|===
+| An instance is running out of policy. You match `RunawayInstance`, stop it with
+quarantine tags (`Remediate - Stop Instance`), and verify state and tags on Floci.
 
-TIP: If you are unsure, choose *Track A — S3*. It is the simplest Floci path.
+| *All three*
+| One rulebook with rules for S3, SG, and runaway. You inject and audit each path.
+Longer than a single track; use when you want the full set of examples.
+|===
 
 == Lab environment
 
@@ -48,13 +53,16 @@ TIP: If you are unsure, choose *Track A — S3*. It is the simplest Floci path.
 | Component | Purpose
 
 | Ansible Automation Platform 2.6
-| Controller + Event-Driven Ansible (activations, Event Streams, Job Templates)
+| Controller + Event-Driven Ansible (projects, activations, Event Streams, Job Templates)
+
+| Gitea
+| Lab SCM at `{gitea-url}` — clone, edit the rulebook, push; both Controller and EDA projects sync from here
 
 | Floci
-| AWS emulator at `https://floci-{guid}.{domain}` — the API and console run as containers, and all three misconfigurations are pre-seeded
+| AWS emulator at `{floci-endpoint}` — the API and console run as containers, and all three misconfigurations are pre-seeded
 
 | Terminal
-| Alert injector scripts and rulebook files under `~/eda-lab/`
+| Track selector, alert injector, and Git clone under `~/eda-lab/`
 |===
 
 Pre-built Job Templates (do not rewrite the playbooks — wire them from your rulebook):
@@ -67,12 +75,12 @@ Pre-built Job Templates (do not rewrite the playbooks — wire them from your ru
 == How Zero-Touch checks work
 
 Each module has *Validate*. Checks use your track marker from Module 1
-(`~/eda-lab/track` containing `s3`, `sg`, or `ec2`).
+(`~/eda-lab/track` containing `s3`, `sg`, `ec2`, or `all`).
 
 == Before you start
 
-. Open the *AAP* tab
-. Confirm you can sign in
-. Open the *terminal* tab for injector commands
+. Open the *AAP* tab and confirm you can sign in
+. Open the *Gitea* tab (username `gitea` / password `ansible123!`) if you want the web view of the repo
+. Open the *terminal* tab for the track selector and Git commands
 
 When ready, continue to xref:module-01-pick-track.adoc[Module 1].

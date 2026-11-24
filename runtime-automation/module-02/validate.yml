@@ -12,6 +12,6 @@
 
     - name: Track still selected
       validation_check:
-        check: "{{ lookup('file', lookup('env', 'HOME') + '/eda-lab/track', errors='ignore') | default('', true) | trim in ['s3', 'sg', 'ec2'] }}"
+        check: "{{ lookup('file', lookup('env', 'HOME') + '/eda-lab/track', errors='ignore') | default('', true) | trim in ['s3', 'sg', 'ec2', 'all'] }}"
         pass_msg: "Track marker present"
-        error_msg: "Re-select track in Module 1 (~/eda-lab/track)"
+        error_msg: "Re-select track in Module 1 (~/eda-lab/bin/select-track.sh)"

@@ -31,12 +31,19 @@ Save and reload/restart the activation.
 
 == Inject noise (shared pattern)
 
+Resolve the injector track (`inject-alert.sh` accepts `s3`, `sg`, or `ec2` only):
+
+[source,bash]
+----
+TRACK=$(cat ~/eda-lab/track); [[ "$TRACK" == "all" ]] && TRACK=s3
+----
+
 Wrong environment:
 
 [source,bash]
 ----
 ~/eda-lab/bin/inject-alert.sh \
-  --track "$(cat ~/eda-lab/track)" \
+  --track "$TRACK" \
   --env staging --severity critical \
   --url "$EVENT_STREAM_URL" --token "$EVENT_STREAM_TOKEN"
 ----
@@ -46,12 +53,13 @@ Low severity:
 [source,bash]
 ----
 ~/eda-lab/bin/inject-alert.sh \
-  --track "$(cat ~/eda-lab/track)" \
+  --track "$TRACK" \
   --env prod --severity info \
   --url "$EVENT_STREAM_URL" --token "$EVENT_STREAM_TOKEN"
 ----
 
 Expect: *no* new remediate job for those events. Use Rule Audit to confirm skip / no-action.
+If you chose *all*, repeat the noise injects with `--track sg` and `--track ec2` as time allows.
 
 == Track procedures: re-test happy path
 

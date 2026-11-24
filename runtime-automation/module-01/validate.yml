@@ -16,11 +16,11 @@
       ansible.builtin.set_fact:
         track: "{{ (track_raw.content | b64decode | trim) if track_raw.content is defined else '' }}"
 
-    - name: Track marker must be s3, sg, or ec2
+    - name: Track marker must be s3, sg, ec2, or all
       validation_check:
-        check: "{{ track in ['s3', 'sg', 'ec2'] }}"
+        check: "{{ track in ['s3', 'sg', 'ec2', 'all'] }}"
         pass_msg: "Track selected: {{ track }}"
-        error_msg: "Set ~/eda-lab/track to s3, sg, or ec2"
+        error_msg: "Set ~/eda-lab/track to s3, sg, ec2, or all (run ~/eda-lab/bin/select-track.sh)"
 
     - name: Starter or learner rulebook exists
       validation_check:
