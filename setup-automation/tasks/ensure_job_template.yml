@@ -1,6 +1,6 @@
 ---
 # Expects: jt_item {name, playbook}, controller_api, aap_*, organization_id,
-# project_id, inventory_id, floci_endpoint, lab_guid, lab_domain
+# project_id, inventory_id, execution_environment_id, floci_endpoint, lab_guid, lab_domain
 
 - name: "Look up job template {{ jt_item.name }}"
   ansible.builtin.uri:
@@ -24,25 +24,27 @@
     validate_certs: false
     status_code: [201, 200]
     body_format: json
-    body:
-      name: "{{ jt_item.name }}"
-      description: "Seeded by setup-automation for the EDA Floci lab"
-      job_type: run
-      inventory: "{{ inventory_id | int }}"
-      project: "{{ project_id | int }}"
-      playbook: "{{ jt_item.playbook }}"
-      organization: "{{ organization_id | int }}"
-      ask_variables_on_launch: false
-      ask_inventory_on_launch: false
-      ask_credential_on_launch: false
-      become_enabled: false
-      verbosity: 0
-      extra_vars: |
-        ---
-        floci_endpoint: "{{ floci_endpoint }}"
-        FLOCI_ENDPOINT: "{{ floci_endpoint }}"
-        GUID: "{{ lab_guid }}"
-        DOMAIN: "{{ lab_domain }}"
+    body: "{{ {
+      'name': jt_item.name,
+      'description': 'Seeded by setup-automation for the EDA Floci lab',
+      'job_type': 'run',
+      'inventory': inventory_id | int,
+      'project': project_id | int,
+      'playbook': jt_item.playbook,
+      'organization': organization_id | int,
+      'execution_environment': execution_environment_id | int,
+      'ask_variables_on_launch': false,
+      'ask_inventory_on_launch': false,
+      'ask_credential_on_launch': false,
+      'become_enabled': false,
+      'verbosity': 0,
+      'extra_vars': {
+        'floci_endpoint': floci_endpoint,
+        'FLOCI_ENDPOINT': floci_endpoint,
+        'GUID': lab_guid,
+        'DOMAIN': lab_domain
+      } | to_nice_yaml
+    } }}"
   when: jt_lookup.json.count | int == 0
 
 - name: "Update job template {{ jt_item.name }}"
@@ -55,14 +57,16 @@
     validate_certs: false
     status_code: [200]
     body_format: json
-    body:
-      inventory: "{{ inventory_id | int }}"
-      project: "{{ project_id | int }}"
-      playbook: "{{ jt_item.playbook }}"
-      extra_vars: |
-        ---
-        floci_endpoint: "{{ floci_endpoint }}"
-        FLOCI_ENDPOINT: "{{ floci_endpoint }}"
-        GUID: "{{ lab_guid }}"
-        DOMAIN: "{{ lab_domain }}"
+    body: "{{ {
+      'inventory': inventory_id | int,
+      'project': project_id | int,
+      'playbook': jt_item.playbook,
+      'execution_environment': execution_environment_id | int,
+      'extra_vars': {
+        'floci_endpoint': floci_endpoint,
+        'FLOCI_ENDPOINT': floci_endpoint,
+        'GUID': lab_guid,
+        'DOMAIN': lab_domain
+      } | to_nice_yaml
+    } }}"
   when: jt_lookup.json.count | int > 0

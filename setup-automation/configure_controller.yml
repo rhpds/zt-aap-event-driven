@@ -22,6 +22,10 @@
     controller_project_name: EDA Lab - Playbooks
     controller_inventory_name: EDA Lab - Local
     organization_name: Default
+    # acme_corp/aws_ee is Python 3.6 and breaks modern amazon.aws (annotations).
+    lab_ee_name: EDA Lab - AWS EE
+    lab_ee_image: registry.redhat.io/ansible-automation-platform-26/ee-supported-rhel9:latest
+    lab_ee_pull: missing
     lab_job_templates:
       - name: Remediate - S3 BPA
         playbook: playbooks/remediate_s3.yml
@@ -301,14 +305,94 @@
         validate_certs: false
         status_code: [201, 200]
         body_format: json
-        body:
-          name: localhost
-          inventory: "{{ inventory_id | int }}"
-          variables: |
-            ---
-            ansible_connection: local
-            ansible_python_interpreter: /usr/libexec/platform-python
+        body: "{{ {
+          'name': 'localhost',
+          'inventory': inventory_id | int,
+          'variables': '---\\nansible_connection: local\\n'
+        } }}"
       when: host_lookup.json.count | int == 0
+
+    # Do not set ansible_python_interpreter here. Jobs run in an AAP EE whose
+    # default Python has boto3; /usr/libexec/platform-python does not.
+    - name: Update localhost host vars for EE Python
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/hosts/{{ host_lookup.json.results[0].id }}/"
+        method: PATCH
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+        body_format: json
+        body: "{{ {
+          'variables': '---\\nansible_connection: local\\n'
+        } }}"
+      when: host_lookup.json.count | int > 0
+
+    - name: Look up lab execution environment
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/execution_environments/?name={{ lab_ee_name | urlencode }}"
+        method: GET
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      register: ee_lookup
+      changed_when: false
+
+    - name: Create lab execution environment
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/execution_environments/"
+        method: POST
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [201, 200]
+        body_format: json
+        body: "{{ {
+          'name': lab_ee_name,
+          'description': 'AWS content EE for Floci remediate/verify jobs',
+          'image': lab_ee_image,
+          'organization': organization_id | int,
+          'pull': lab_ee_pull
+        } }}"
+      register: ee_create
+      when: ee_lookup.json.count | int == 0
+
+    - name: Update lab execution environment if it already exists
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/execution_environments/{{ ee_lookup.json.results[0].id }}/"
+        method: PATCH
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+        body_format: json
+        body: "{{ {
+          'image': lab_ee_image,
+          'organization': organization_id | int,
+          'pull': lab_ee_pull
+        } }}"
+      when: ee_lookup.json.count | int > 0
+
+    - name: Re-read lab execution environment
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/execution_environments/?name={{ lab_ee_name | urlencode }}"
+        method: GET
+        user: "{{ aap_username }}"
+        password: "{{ aap_password }}"
+        force_basic_auth: true
+        validate_certs: false
+        status_code: [200]
+      register: ee_resolved
+      changed_when: false
+
+    - name: Resolve execution environment id
+      ansible.builtin.set_fact:
+        execution_environment_id: "{{ ee_resolved.json.results[0].id }}"
 
     - name: Ensure each lab job template exists
       ansible.builtin.include_tasks: tasks/ensure_job_template.yml
@@ -351,6 +435,7 @@
         msg: >-
           Seeded Controller project '{{ controller_project_name }}' from {{ controller_scm_url }},
           inventory '{{ controller_inventory_name }}',
+          EE '{{ lab_ee_name }}' ({{ lab_ee_image }}),
           {{ lab_job_templates | length }} job templates,
           {{ lab_workflows | length }} workflows.
           FLOCI_ENDPOINT={{ floci_endpoint }}.
