@@ -33,22 +33,24 @@
     validate_certs: false
     status_code: [201, 200]
     body_format: json
-    body:
-      name: "{{ wf_item.name }}"
-      description: "Remediate then verify — seeded by setup-automation"
-      organization: "{{ organization_id | int }}"
-      inventory: "{{ inventory_id | int }}"
-      ask_inventory_on_launch: false
+    body: "{{ {
+      'name': wf_item.name,
+      'description': 'Remediate then verify — seeded by setup-automation',
+      'organization': organization_id | int,
+      'inventory': inventory_id | int,
+      'ask_inventory_on_launch': false
+    } }}"
   register: wf_create
   when: wf_lookup.json.count | int == 0
 
 - name: "Resolve workflow id for {{ wf_item.name }}"
   ansible.builtin.set_fact:
+    # Prefer lookup so include_tasks loop registers from a prior item cannot leak.
     workflow_id: >-
       {{
-        wf_create.json.id
-        if wf_create.json.id is defined
-        else wf_lookup.json.results[0].id
+        wf_lookup.json.results[0].id
+        if wf_lookup.json.count | int > 0
+        else wf_create.json.id
       }}
 
 - name: "List existing nodes for workflow {{ wf_item.name }}"
@@ -73,12 +75,16 @@
     validate_certs: false
     status_code: [201, 200]
     body_format: json
-    body:
-      workflow_job_template: "{{ workflow_id | int }}"
-      unified_job_template: "{{ jt_ids[wf_item.first] | int }}"
-      identifier: remediate
-  register: node_first
-  when: wf_nodes.json.count | int == 0
+    body: "{{ {
+      'workflow_job_template': workflow_id | int,
+      'unified_job_template': jt_ids[wf_item.first] | int,
+      'identifier': 'remediate'
+    } }}"
+  when: >-
+    wf_nodes.json.results
+    | selectattr('identifier', 'equalto', 'remediate')
+    | list
+    | length == 0
 
 - name: "Create verify node for {{ wf_item.name }}"
   ansible.builtin.uri:
@@ -90,16 +96,38 @@
     validate_certs: false
     status_code: [201, 200]
     body_format: json
-    body:
-      workflow_job_template: "{{ workflow_id | int }}"
-      unified_job_template: "{{ jt_ids[wf_item.second] | int }}"
-      identifier: verify
-  register: node_second
-  when: wf_nodes.json.count | int == 0
+    body: "{{ {
+      'workflow_job_template': workflow_id | int,
+      'unified_job_template': jt_ids[wf_item.second] | int,
+      'identifier': 'verify'
+    } }}"
+  when: >-
+    wf_nodes.json.results
+    | selectattr('identifier', 'equalto', 'verify')
+    | list
+    | length == 0
+
+- name: "Re-list nodes for workflow {{ wf_item.name }}"
+  ansible.builtin.uri:
+    url: "{{ controller_api }}/workflow_job_templates/{{ workflow_id }}/workflow_nodes/"
+    method: GET
+    user: "{{ aap_username }}"
+    password: "{{ aap_password }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: [200]
+  register: wf_nodes_fresh
+  changed_when: false
+
+- name: "Resolve remediate and verify node ids for {{ wf_item.name }}"
+  ansible.builtin.set_fact:
+    node_first_id: "{{ wf_nodes_fresh.json.results | selectattr('identifier', 'equalto', 'remediate') | map(attribute='id') | first }}"
+    node_second_id: "{{ wf_nodes_fresh.json.results | selectattr('identifier', 'equalto', 'verify') | map(attribute='id') | first }}"
+    node_first_success_nodes: "{{ wf_nodes_fresh.json.results | selectattr('identifier', 'equalto', 'remediate') | map(attribute='success_nodes') | first | default([]) }}"
 
 - name: "Connect remediate success to verify for {{ wf_item.name }}"
   ansible.builtin.uri:
-    url: "{{ controller_api }}/workflow_job_template_nodes/{{ node_first.json.id }}/success_nodes/"
+    url: "{{ controller_api }}/workflow_job_template_nodes/{{ node_first_id }}/success_nodes/"
     method: POST
     user: "{{ aap_username }}"
     password: "{{ aap_password }}"
@@ -107,9 +135,6 @@
     validate_certs: false
     status_code: [204, 200, 201]
     body_format: json
-    body:
-      id: "{{ node_second.json.id | int }}"
-  when:
-    - wf_nodes.json.count | int == 0
-    - node_first.json.id is defined
-    - node_second.json.id is defined
+    # Dict expression keeps id as a JSON integer (quoted "{{ x | int }}" becomes a string).
+    body: "{{ {'id': node_second_id | int} }}"
+  when: (node_second_id | int) not in (node_first_success_nodes | map('int') | list)
